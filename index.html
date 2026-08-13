@@ -504,6 +504,24 @@
   .immun-info{ flex:1; }
   .immun-label{ font-size:13px; font-weight:600; }
   .immun-due{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-muted); margin-top:1px; }
+
+  /* ---------- District Nutrition Officer: trend board ---------- */
+  .trend-board{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:16px; margin-bottom:12px;
+  }
+  .trend-board-title{ font-size:12px; font-weight:700; color:var(--ink); margin-bottom:12px; }
+  .trend-row{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+  .trend-row:last-child{ margin-bottom:0; }
+  .trend-label{ width:96px; font-size:11.5px; color:var(--ink-muted); flex-shrink:0; }
+  .trend-bar-track{ flex:1; background:var(--surface-alt); border-radius:6px; height:13px; overflow:hidden; }
+  .trend-bar-fill{ height:100%; border-radius:6px; transition:width .5s cubic-bezier(.2,.8,.3,1); }
+  .trend-count{ width:24px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; flex-shrink:0; }
+
+  .trend-week-row{ display:flex; align-items:flex-end; gap:7px; height:64px; margin-top:4px; }
+  .trend-week-bar-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .trend-week-bar{ width:100%; border-radius:4px 4px 0 0; background:var(--sky); min-height:3px; transition:height .5s cubic-bezier(.2,.8,.3,1); }
+  .trend-week-day{ font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--ink-muted); margin-top:5px; }
 </style>
 </head>
 <body>
@@ -891,7 +909,15 @@
           <div style="font-size:19px;font-weight:700;" id="dno-facility-name">Loading facility…</div>
         </div>
 
+        <div id="dno-flagged-section" style="display:none;">
+          <div class="section-eyebrow" style="color:var(--coral);">🔔 Flagged children · needs action</div>
+          <div id="dno-flagged-list"></div>
+        </div>
+
         <div id="dno-stats" class="quick-grid"><!-- populated by renderNutritionOfficerHome() --></div>
+
+        <div class="section-eyebrow">Trend analysis</div>
+        <div id="dno-trends" style="padding:0 20px 6px;"><!-- populated by renderNutritionTrends() --></div>
 
         <div class="section-eyebrow">Children · priority first</div>
         <div id="dno-child-list"><!-- populated by renderNutritionOfficerHome() --></div>
@@ -1163,7 +1189,7 @@
     referral: 'This shows whether your referral has reached the facility yet \u2014 it\u2019s saved even offline, and sends automatically once you\u2019re back in range.',
     nutrition: 'This plan updates based on the child\u2019s age and the season \u2014 foods you can actually find nearby, not a generic chart.',
     'cg-link': 'This links your device to your record so it remembers you next time \u2014 you\u2019ll only do this once.',
-    'dno-home': 'Children are sorted so the ones needing catch-up nutrition appear first. Tap any child to see their full weekly food plan.',
+    'dno-home': 'Flagged children needing action appear at the top. Below that, a trend board, then every child sorted by priority \u2014 tap any child for their full weekly food plan.',
     'cg-home': 'Tap an icon to get started. I can read anything aloud \u2014 just tap the speaker icon on any tip.',
     'cg-checkup': 'Tap anything you\u2019re noticing, then tap Check. If it needs attention, I\u2019ll tell you what to do \u2014 and let your health worker know too.',
   };
@@ -1847,12 +1873,119 @@ function growthLabel(status) {
   return status.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Surfaces children needing the Nutrition Officer's attention: either a
+// caregiver reported a danger sign that hasn't been acted on yet, or the
+// child's growth status itself is a nutrition emergency (severe wasting).
+// Acknowledging here clears the same flag the worker's Home screen shows —
+// whichever responsible person acts on it first, it's handled.
+function renderFlaggedChildren(children) {
+  const section = document.getElementById('dno-flagged-section');
+  const list = document.getElementById('dno-flagged-list');
+  if (!section || !list) return;
+  const flagged = children.filter((h) =>
+    (h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged) || h.growthStatus === 'severe_wasting'
+  );
+  if (!flagged.length) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  section.style.display = '';
+  list.innerHTML = flagged.map((h) => {
+    const hasReport = h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged;
+    const reasonText = hasReport
+      ? 'Caregiver reported: ' + h.lastCaregiverReport.reasons.join(', ')
+      : 'Severe wasting \u2014 needs facility referral';
+    const level = hasReport ? h.lastCaregiverReport.level : 'urgent';
+    return `
+      <div class="card fade-in" style="border-left:4px solid var(--coral);" onclick="acknowledgeChildFlagAndOpen('${h.id}')">
+        <span class="pulse ${pulseClass(level)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+        <div class="info">
+          <div class="name">${h.memberName}</div>
+          <div class="meta">${reasonText}</div>
+        </div>
+        <span class="chip ${pulseClass(level)}">${level.toUpperCase()}</span>
+      </div>`;
+  }).join('');
+}
+
+function acknowledgeChildFlagAndOpen(householdId) {
+  const h = allHouseholds.find((x) => x.id === householdId);
+  if (h && h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged) {
+    Data.acknowledgeCaregiverReport(householdId).catch((err) => {
+      showAppError('Could not clear this flag: ' + (err && err.message ? err.message : err));
+    });
+  }
+  openNutritionFromDNO(householdId);
+}
+
+// Trend board: a real growth-status distribution (computed live, not
+// fabricated) plus a genuine 7-day visit-activity trend built from actual
+// household.lastVisitAt timestamps. A full historical day-by-day flag
+// trend would need a dedicated aggregation collection — noted as a next
+// step rather than faked here.
+function renderNutritionTrends(children) {
+  const box = document.getElementById('dno-trends');
+  if (!box) return;
+  if (!children.length) { box.innerHTML = ''; return; }
+
+  const counts = { normal: 0, mild_underweight: 0, moderate_underweight: 0, severe_wasting: 0 };
+  children.forEach((h) => { const s = h.growthStatus || 'normal'; if (counts[s] !== undefined) counts[s]++; });
+  const total = children.length;
+  const colorFor = { normal: 'var(--emerald)', mild_underweight: 'var(--amber)', moderate_underweight: 'var(--amber)', severe_wasting: 'var(--coral)' };
+  const labelFor = { normal: 'On track', mild_underweight: 'Mild underweight', moderate_underweight: 'Moderate underweight', severe_wasting: 'Severe wasting' };
+
+  const distributionRows = ['normal', 'mild_underweight', 'moderate_underweight', 'severe_wasting'].map((key) => {
+    const pct = total ? Math.round((counts[key] / total) * 100) : 0;
+    return `
+      <div class="trend-row">
+        <span class="trend-label">${labelFor[key]}</span>
+        <div class="trend-bar-track"><div class="trend-bar-fill" style="width:${pct}%; background:${colorFor[key]};"></div></div>
+        <span class="trend-count">${counts[key]}</span>
+      </div>`;
+  }).join('');
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    days.push({ label: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()], start: dayStart });
+  }
+  const visitCounts = days.map((d) => {
+    const dayEnd = d.start + 86400000;
+    return children.filter((h) => {
+      const raw = h.lastVisitAt;
+      const t = raw && typeof raw.toMillis === 'function' ? raw.toMillis() : raw;
+      return t >= d.start && t < dayEnd;
+    }).length;
+  });
+  const maxVisits = Math.max(1, ...visitCounts);
+  const weekBars = days.map((d, i) => `
+    <div class="trend-week-bar-wrap">
+      <div class="trend-week-bar" style="height:${Math.max(6, Math.round((visitCounts[i] / maxVisits) * 100))}%;"></div>
+      <div class="trend-week-day">${d.label}</div>
+    </div>`).join('');
+
+  box.innerHTML = `
+    <div class="trend-board">
+      <div class="trend-board-title">Growth status distribution</div>
+      ${distributionRows}
+    </div>
+    <div class="trend-board">
+      <div class="trend-board-title">Children seen, last 7 days</div>
+      <div class="trend-week-row">${weekBars}</div>
+    </div>`;
+}
+
 function renderNutritionOfficerHome(households) {
   const statsBox = document.getElementById('dno-stats');
   const listBox = document.getElementById('dno-child-list');
   if (!statsBox || !listBox) return;
 
   const children = households.filter((h) => h.memberType === 'child');
+  renderFlaggedChildren(children);
+  renderNutritionTrends(children);
+
   const counts = { normal: 0, mild_underweight: 0, moderate_underweight: 0, severe_wasting: 0 };
   children.forEach((h) => {
     const status = h.growthStatus || 'normal';
@@ -2427,6 +2560,7 @@ window.openNutritionFromDNO = openNutritionFromDNO;
 window.assessChildDemo = assessChild;
 window.toggleImmunization = toggleImmunization;
 window.acknowledgeCaregiverReportAndOpen = acknowledgeCaregiverReportAndOpen;
+window.acknowledgeChildFlagAndOpen = acknowledgeChildFlagAndOpen;
 window.renderCaregiverLinkResults = renderCaregiverLinkResults;
 window.linkCaregiverHousehold = linkCaregiverHousehold;
 window.renderCaregiverSigns = renderCaregiverSigns;
