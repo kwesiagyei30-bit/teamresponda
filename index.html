@@ -454,6 +454,20 @@
   }
   .guide-tip .guide-tip-close:hover{ background:rgba(255,255,255,.28); }
 
+  /* ---------- Global error toast — replaces silent failures ---------- */
+  .app-error-toast{
+    position:absolute; top:14px; left:12px; right:12px; z-index:60;
+    background:var(--coral); color:#fff; border-radius:14px; padding:13px 14px;
+    font-size:12.5px; line-height:1.5; display:flex; align-items:flex-start; gap:10px;
+    box-shadow:0 16px 34px -12px rgba(0,0,0,.4);
+    animation:guideIn .3s ease both;
+  }
+  .app-error-toast span{ flex:1; }
+  .app-error-toast button{
+    background:rgba(255,255,255,.22); border:none; color:#fff; border-radius:8px;
+    padding:6px 10px; font-weight:700; font-size:11px; cursor:pointer; flex-shrink:0;
+  }
+
   /* ---------- Text input fields (Register / Add Household) ---------- */
   .field-group{ padding:0 20px 14px; }
   .field-label{ font-size:12px; font-weight:600; color:var(--ink-muted); margin-bottom:6px; display:block; }
@@ -583,9 +597,17 @@
             <div id="login-staff-id-error" class="field-error">Please enter your Staff ID.</div>
           </div>
 
+          <div id="login-facility-fields" style="width:100%;max-width:280px;margin-top:14px;">
+            <label class="field-label">Facility / CHPS compound</label>
+            <input id="login-facility" class="field-input" type="text" placeholder="e.g. Zorborgu CHPS Compound" autocomplete="off" />
+            <div id="login-facility-error" class="field-error">Please enter your facility name.</div>
+          </div>
+
           <div id="login-caregiver-note" style="display:none; max-width:260px; text-align:center; margin-top:24px;">
             <p class="muted">No password needed — next we'll link this device to your (or your child's) health record.</p>
           </div>
+
+          <div id="login-error-banner" class="field-error" style="display:none; max-width:280px; text-align:center; margin-top:14px;"></div>
 
           <button class="btn-primary" id="login-continue-btn" style="width:100%;max-width:280px;margin-top:22px;" onclick="completeLogin()">Continue</button>
         </div>
@@ -866,7 +888,7 @@
 
         <div style="padding:14px 20px 4px;">
           <div style="font-size:13px;color:var(--ink-muted);">District Nutrition Officer</div>
-          <div style="font-size:19px;font-weight:700;">Zorborgu catchment</div>
+          <div style="font-size:19px;font-weight:700;" id="dno-facility-name">Loading facility…</div>
         </div>
 
         <div id="dno-stats" class="quick-grid"><!-- populated by renderNutritionOfficerHome() --></div>
@@ -1200,14 +1222,16 @@
   }
 
   // ---- Login: role-appropriate credentials ----
-  // Health Worker / Nutrition Officer: Staff ID only — no separate PIN to
-  // forget, since GHS already issues these IDs. Remembered locally so a
-  // return visit is one tap, not re-typed every time.
+  // Health Worker / Nutrition Officer: Staff ID + Facility — no separate PIN
+  // to forget, since GHS already issues Staff IDs. Facility ties every
+  // household/referral this device creates to a specific CHPS compound.
+  // Both remembered locally so a return visit is one tap, not re-typed.
   // Caregiver: no credential at all — this is a personal device, and the
   // household-linking step that follows already answers "who is this."
   var nutritionReturnScreen = 'home';
   let loginRole = 'worker';
   const STAFF_ID_KEY = 'responda_staff_id';
+  const FACILITY_KEY = 'responda_facility_name';
 
   function setRole(role, btn){
     loginRole = role;
@@ -1215,9 +1239,12 @@
     btn.classList.add('active');
     const isStaff = role === 'worker' || role === 'nutrition-officer';
     const staffFields = document.getElementById('login-staff-fields');
+    const facilityFields = document.getElementById('login-facility-fields');
     const cgNote = document.getElementById('login-caregiver-note');
     if (staffFields) staffFields.style.display = isStaff ? '' : 'none';
+    if (facilityFields) facilityFields.style.display = isStaff ? '' : 'none';
     if (cgNote) cgNote.style.display = isStaff ? 'none' : '';
+    hideLoginError();
     updateContinueButtonLabel();
   }
 
@@ -1234,27 +1261,49 @@
   }
 
   function prefillStaffId(){
-    let saved = null;
-    try { saved = localStorage.getItem(STAFF_ID_KEY); } catch(e){}
+    let savedId = null, savedFacility = null;
+    try {
+      savedId = localStorage.getItem(STAFF_ID_KEY);
+      savedFacility = localStorage.getItem(FACILITY_KEY);
+    } catch(e){}
     const idInput = document.getElementById('login-staff-id');
-    if (saved && idInput && !idInput.value) idInput.value = saved;
+    const facilityInput = document.getElementById('login-facility');
+    if (savedId && idInput && !idInput.value) idInput.value = savedId;
+    if (savedFacility && facilityInput && !facilityInput.value) facilityInput.value = savedFacility;
     updateContinueButtonLabel();
   }
 
+  function showLoginError(message){
+    const banner = document.getElementById('login-error-banner');
+    if (!banner) return;
+    banner.textContent = message;
+    banner.style.display = 'block';
+  }
+  function hideLoginError(){
+    const banner = document.getElementById('login-error-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
   function completeLogin(){
+    hideLoginError();
     const isStaff = loginRole === 'worker' || loginRole === 'nutrition-officer';
     if (isStaff) {
       const idInput = document.getElementById('login-staff-id');
-      const errorEl = document.getElementById('login-staff-id-error');
-      const val = idInput.value.trim();
-      if (!val) {
-        idInput.classList.add('error');
-        errorEl.classList.add('show');
-        return;
-      }
-      idInput.classList.remove('error');
-      errorEl.classList.remove('show');
-      try { localStorage.setItem(STAFF_ID_KEY, val); } catch(e){}
+      const idError = document.getElementById('login-staff-id-error');
+      const facilityInput = document.getElementById('login-facility');
+      const facilityError = document.getElementById('login-facility-error');
+      const idVal = idInput.value.trim();
+      const facilityVal = facilityInput.value.trim();
+      let valid = true;
+      if (!idVal) { idInput.classList.add('error'); idError.classList.add('show'); valid = false; }
+      else { idInput.classList.remove('error'); idError.classList.remove('show'); }
+      if (!facilityVal) { facilityInput.classList.add('error'); facilityError.classList.add('show'); valid = false; }
+      else { facilityInput.classList.remove('error'); facilityError.classList.remove('show'); }
+      if (!valid) return;
+      try {
+        localStorage.setItem(STAFF_ID_KEY, idVal);
+        localStorage.setItem(FACILITY_KEY, facilityVal);
+      } catch(e){}
     }
     const dest = loginRole === 'worker' ? 'home' : loginRole === 'nutrition-officer' ? 'dno-home' : 'cg-home';
     setScreen(dest);
@@ -1472,29 +1521,56 @@ if (USE_FIREBASE) {
   const db = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
   const auth = getAuth(fbApp);
 
-  const authReady = new Promise((resolve) => {
-    onAuthStateChanged(auth, (user) => { if (user) resolve(user.uid); });
-    signInAnonymously(auth).catch((e) => console.error('[Responda] Auth failed:', e));
+  // A silent hang here (auth never resolving) was the actual root cause
+  // behind "registration got stuck" and "preloaded household refused to
+  // load" — if Anonymous auth isn't enabled in Firebase Console,
+  // signInAnonymously fails, onAuthStateChanged never fires with a user,
+  // and every `await authReady` call below waited forever with no error.
+  // This timeout + explicit rejection makes that failure visible instead.
+  const authReady = new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Sign-in timed out. In Firebase Console, check Authentication \u2192 Sign-in method \u2192 Anonymous is enabled, and that you have a network connection.'));
+    }, 10000);
+    onAuthStateChanged(auth, (user) => {
+      if (user) { clearTimeout(timeoutId); resolve(user.uid); }
+    });
+    signInAnonymously(auth).catch((e) => {
+      clearTimeout(timeoutId);
+      reject(new Error('Sign-in failed (' + (e && e.code ? e.code : 'unknown error') + '). Check that Anonymous authentication is enabled in Firebase Console.'));
+    });
   });
+  authReady.catch(() => {}); // prevent an unhandled-rejection warning if nothing has awaited yet
 
   Data = {
     mode: 'firebase',
-    async seedIfEmpty() {
+    // Households are scoped by FACILITY now, not by individual device/uid —
+    // a worker's uid and a nutrition officer's uid are always different
+    // random values, so uid-scoping meant no one could ever see records
+    // created on a different device. Facility scoping is what CHPS records
+    // should share in the first place.
+    async seedIfEmpty(facilityName) {
+      if (!facilityName) return;
       const uid = await authReady;
-      const q = query(collection(db, 'households'), where('assignedWorkerId', '==', uid));
+      const q = query(collection(db, 'households'), where('facilityName', '==', facilityName));
       const snap = await getDocs(q);
       if (!snap.empty) return;
       for (const h of DEMO_HOUSEHOLDS) {
         await addDoc(collection(db, 'households'), {
-          ...h, assignedWorkerId: uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+          ...h, facilityName, assignedWorkerId: uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
         });
       }
     },
-    subscribeHouseholds(cb) {
-      authReady.then((uid) => {
-        const q = query(collection(db, 'households'), where('assignedWorkerId', '==', uid));
-        onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
-      });
+    subscribeHouseholds(facilityName, cb) {
+      authReady.then(() => {
+        const q = facilityName
+          ? query(collection(db, 'households'), where('facilityName', '==', facilityName))
+          : collection(db, 'households');
+        onSnapshot(
+          q,
+          (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+          (err) => showAppError('Could not load households: ' + err.message)
+        );
+      }).catch((err) => showAppError(err.message));
     },
     async saveRiskAssessment(data) {
       const uid = await authReady;
@@ -1548,9 +1624,11 @@ if (USE_FIREBASE) {
       });
     },
     subscribeHousehold(householdId, cb) {
-      onSnapshot(doc(db, 'households', householdId), (snap) => {
-        if (snap.exists()) cb({ id: snap.id, ...snap.data() });
-      });
+      onSnapshot(
+        doc(db, 'households', householdId),
+        (snap) => { if (snap.exists()) cb({ id: snap.id, ...snap.data() }); },
+        (err) => showAppError('Could not load this record: ' + err.message)
+      );
     },
     subscribeReferral(referralId, cb) {
       const ref = doc(db, 'referrals', referralId);
@@ -1572,14 +1650,21 @@ function buildLocalDataLayer() {
   function notifyHouseholds() { householdListeners.forEach((cb) => cb(store.households.map((h) => ({ ...h }))) ); }
   return {
     mode: 'local',
-    async seedIfEmpty() {
-      if (seeded) return;
+    async seedIfEmpty(facilityName) {
+      if (seeded || !facilityName) return;
       seeded = true;
-      store.households = DEMO_HOUSEHOLDS.map((h, i) => ({ id: 'demo-' + i, ...h }));
+      store.households = DEMO_HOUSEHOLDS.map((h, i) => ({ id: 'demo-' + i, ...h, facilityName }));
+      notifyHouseholds();
     },
-    subscribeHouseholds(cb) {
-      householdListeners.push(cb);
-      cb(store.households.map((h) => ({ ...h })));
+    subscribeHouseholds(facilityName, cb) {
+      const push = () => {
+        const filtered = facilityName
+          ? store.households.filter((h) => h.facilityName === facilityName)
+          : store.households;
+        cb(filtered.map((h) => ({ ...h })));
+      };
+      householdListeners.push(push);
+      push();
     },
     async saveRiskAssessment(data) {
       return 'local-assessment-' + Date.now();
@@ -1657,6 +1742,23 @@ let triageSelectedSigns = new Set();
 
 function pulseClass(level){ return level === 'urgent' ? 'urgent' : level === 'caution' ? 'caution' : 'routine'; }
 function initials(name){ return (name || '').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase(); }
+
+// Every Data.* call the UI triggers routes failures here instead of letting
+// them fail silently — this is the direct fix for "registration got stuck
+// without registering": before, a rejected promise with no .catch() just
+// did nothing visible. Now the person sees exactly what went wrong.
+function showAppError(message) {
+  console.error('[Responda]', message);
+  const existing = document.querySelector('.app-error-toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'app-error-toast';
+  el.innerHTML = `<span></span><button>Dismiss</button>`;
+  el.querySelector('span').textContent = message;
+  el.querySelector('button').onclick = () => el.remove();
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.appendChild(el);
+}
 
 function renderHouseholds(households) {
   allHouseholds = households;
@@ -1837,7 +1939,9 @@ function renderImmunizationChecklist(h) {
 }
 
 function toggleImmunization(householdId, vaccineId, given) {
-  Data.updateImmunization(householdId, vaccineId, given);
+  Data.updateImmunization(householdId, vaccineId, given).catch((err) => {
+    showAppError('Could not save immunization: ' + (err && err.message ? err.message : err));
+  });
   // Optimistic local update so the checklist responds instantly, even offline.
   const h = allHouseholds.find((x) => x.id === householdId);
   if (h) {
@@ -1915,10 +2019,13 @@ function saveNewHousehold() {
   }
   const community = document.getElementById('add-hh-community').value.trim() || 'Zorborgu';
   const distanceVal = parseFloat(document.getElementById('add-hh-distance').value);
+  let facilityName = null;
+  try { facilityName = localStorage.getItem('responda_facility_name'); } catch (e) {}
   const base = {
     headName, memberName: headName, community,
     distanceFromFacility: isNaN(distanceVal) ? null : distanceVal,
     currentRiskLevel: 'routine', memberType: addHHType,
+    facilityName: facilityName || 'Unassigned facility',
   };
   if (addHHType === 'pregnant') {
     base.gestationWeeks = parseInt(document.getElementById('add-hh-gestation').value, 10) || null;
@@ -1927,6 +2034,8 @@ function saveNewHousehold() {
     base.growthStatus = 'normal';
     base.season = 'rainy';
   }
+  const saveBtn = document.querySelector('#mobile-add-household .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
   Data.createHousehold(base).then((id) => {
     document.getElementById('add-hh-name').value = '';
     document.getElementById('add-hh-community').value = '';
@@ -1934,6 +2043,10 @@ function saveNewHousehold() {
     document.getElementById('add-hh-age').value = '';
     document.getElementById('add-hh-distance').value = '';
     setScreen('home');
+  }).catch((err) => {
+    showAppError('Could not save household: ' + (err && err.message ? err.message : err));
+  }).finally(() => {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save household'; }
   });
 }
 
@@ -2036,11 +2149,14 @@ function generateReferral() {
     return Data.createReferral({
       assessmentId, householdId: h.id, urgency: result.level,
       reasonSummary: result.reasons.join('; '), distanceKm: h.distanceFromFacility,
+      facilityName: h.facilityName || null,
     }).then((referralId) => {
       Data.subscribeReferral(referralId, renderReferralStatus);
       renderReferralSummary(h, result);
       setScreen('referral');
     });
+  }).catch((err) => {
+    showAppError('Could not save this assessment: ' + (err && err.message ? err.message : err));
   });
 }
 
@@ -2253,7 +2369,9 @@ function runCaregiverCheck() {
     : assessChild({ ageMonths: h.ageMonths, selectedSignIds: ids });
   renderCaregiverResult(result);
   if (result.level !== 'routine') {
-    Data.saveCaregiverReport(h.id, { level: result.level, reasons: result.reasons, selectedSignIds: ids });
+    Data.saveCaregiverReport(h.id, { level: result.level, reasons: result.reasons, selectedSignIds: ids }).catch((err) => {
+      showAppError('Could not send your report to your health worker: ' + (err && err.message ? err.message : err) + '. It will not retry automatically — please try again.');
+    });
   }
 }
 
@@ -2298,6 +2416,8 @@ window.renderRegisterResults = renderRegisterResults;
 window.toggleAddType = toggleAddType;
 window.openAddHouseholdForm = openAddHouseholdForm;
 window.saveNewHousehold = saveNewHousehold;
+window.Data = Data;
+window.bootHouseholdData = bootHouseholdData;
 window.addHouseholdDesktopQuick = addHouseholdDesktopQuick;
 window.toggleTriageSign = toggleTriageSign;
 window.runTriageAssessment = runTriageAssessment;
@@ -2313,7 +2433,34 @@ window.renderCaregiverSigns = renderCaregiverSigns;
 window.toggleCaregiverSign = toggleCaregiverSign;
 window.runCaregiverCheck = runCaregiverCheck;
 window.openCaregiverReminders = openCaregiverReminders;
+let householdDataBooted = false;
+async function bootHouseholdData(facilityName) {
+  try {
+    if (facilityName) {
+      await Data.seedIfEmpty(facilityName);
+    }
+    Data.subscribeHouseholds(facilityName || null, renderHouseholds);
+    householdDataBooted = true;
+  } catch (err) {
+    showAppError('Could not load household data: ' + (err && err.message ? err.message : err));
+  }
+}
+
 window.onLoginComplete = function (role) {
+  let facilityName = null;
+  if (role === 'worker' || role === 'nutrition-officer') {
+    try { facilityName = localStorage.getItem('responda_facility_name'); } catch (e) {}
+  }
+  if (role === 'nutrition-officer') {
+    const label = document.getElementById('dno-facility-name');
+    if (label) label.textContent = facilityName || 'Unassigned facility';
+  }
+  // Workers/officers see only their facility's households. Caregivers get
+  // an unscoped subscription (facilityName = null) purely so the "find my
+  // household" search on the linking screen has something to search —
+  // they never see this as a browsable list themselves.
+  bootHouseholdData(facilityName);
+
   if (role !== 'caregiver') return;
   let linkedId = null;
   try { linkedId = localStorage.getItem(CG_LINK_KEY); } catch (e) {}
@@ -2323,10 +2470,6 @@ window.onLoginComplete = function (role) {
     setScreen('cg-link');
   }
 };
-
-// ---- Boot ----
-await Data.seedIfEmpty();
-Data.subscribeHouseholds(renderHouseholds);
 
 // ---- Service worker: caches the app shell so it opens even after days offline ----
 if ('serviceWorker' in navigator) {
