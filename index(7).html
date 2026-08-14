@@ -1,0 +1,2721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0B8457">
+<link rel="manifest" href="./manifest.json">
+<title>Responda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFCFA;
+    --surface:#FFFFFF;
+    --surface-alt:#EDF6F1;
+    --ink:#16241C;
+    --ink-muted:#5C6E64;
+    --emerald:#0B8457;
+    --emerald-deep:#075C3B;
+    --emerald-soft:#D8EEE2;
+    --coral:#D6553F;
+    --coral-soft:#FBE7E3;
+    --amber:#E2A23B;
+    --amber-soft:#FBF0DD;
+    --sky:#3E8FC1;
+    --sky-soft:#E3F1F9;
+    --border:#E1E8E3;
+    --radius:18px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{ height:100%; }
+  body{
+    font-family:'League Spartan', sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  /* ---------- Page chrome (not part of the app itself) ---------- */
+  .page-head{ max-width:1200px; margin:0 auto 28px; text-align:center; }
+  .page-head .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--emerald); font-weight:500;
+  }
+  .page-head h1{
+    font-size:clamp(28px,5vw,44px); font-weight:800; letter-spacing:-0.02em; margin-top:8px;
+  }
+  .page-head p{ color:var(--ink-muted); margin-top:8px; font-size:15px; }
+
+  .hero-mark{
+    font-size:clamp(38px,7vw,64px); font-weight:800; letter-spacing:-0.03em; color:var(--emerald-deep);
+    line-height:1;
+  }
+  .marquee-wrap{
+    overflow:hidden; width:100%; max-width:680px; margin:16px auto 0;
+    border-top:1.5px solid var(--emerald-soft); border-bottom:1.5px solid var(--emerald-soft);
+    padding:11px 0; mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+  }
+  .marquee-track{ display:flex; width:max-content; animation:marquee 20s linear infinite; }
+  .marquee-track span{
+    white-space:nowrap; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600;
+    letter-spacing:.05em; color:var(--emerald); text-transform:uppercase; padding-right:36px;
+    display:flex; align-items:center; gap:36px;
+  }
+  @keyframes marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce){ .marquee-track{ animation:none; } }
+
+  /* ---------- App splash screen ---------- */
+  .splash-screen{
+    height:100%; position:relative; overflow:hidden; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:0 26px;
+    background:linear-gradient(165deg,#FDFEFD 0%,#F1F9F4 50%,#E4F4EC 100%);
+  }
+  .blob{ position:absolute; border-radius:50%; filter:blur(46px); opacity:.6; z-index:0; }
+  .blob1{ width:200px; height:200px; background:var(--emerald-soft); top:-50px; left:-55px; animation:float1 9s ease-in-out infinite; }
+  .blob2{ width:230px; height:230px; background:var(--sky-soft); bottom:-70px; right:-60px; animation:float2 11s ease-in-out infinite; }
+  .blob3{ width:140px; height:140px; background:var(--amber-soft); bottom:130px; left:-45px; animation:float2 8s ease-in-out infinite reverse; }
+  @keyframes float1{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(18px,26px) scale(1.08); } }
+  @keyframes float2{ 0%,100%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(-22px,-18px) scale(1.1); } }
+
+  .splash-rings{ position:relative; width:158px; height:158px; display:flex; align-items:center; justify-content:center; margin-bottom:2px; z-index:1; }
+  .splash-rings .ring{ position:absolute; inset:0; border-radius:50%; border:1.5px solid var(--emerald); opacity:0; animation:ringPulse 3.2s ease-out infinite; }
+  .splash-rings .ring:nth-child(2){ animation-delay:1.05s; }
+  .splash-rings .ring:nth-child(3){ animation-delay:2.1s; }
+  @keyframes ringPulse{ 0%{ transform:scale(.4); opacity:.55; } 80%{ opacity:0; } 100%{ transform:scale(1); opacity:0; } }
+
+  .splash-mark{
+    width:64px; height:64px; border-radius:20px; background:linear-gradient(150deg,var(--emerald),var(--emerald-deep));
+    display:flex; align-items:center; justify-content:center; box-shadow:0 14px 30px -10px rgba(11,132,87,.5);
+    animation:markIn .8s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  .splash-mark svg{ width:32px; height:32px; }
+  @keyframes markIn{ 0%{ transform:scale(.3); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+
+  .splash-word{
+    font-size:38px; font-weight:800; letter-spacing:-0.02em; margin-top:18px; z-index:1;
+    background:linear-gradient(90deg,var(--emerald-deep),var(--emerald));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:wordIn .7s ease .3s both;
+  }
+  @keyframes wordIn{ 0%{ opacity:0; transform:translateY(10px); } 100%{ opacity:1; transform:translateY(0); } }
+
+  .splash-marquee{
+    margin-top:16px; max-width:280px; z-index:1; opacity:0; animation:fadeSlide .6s ease .75s both;
+  }
+  .splash-marquee .marquee-wrap{ margin:0; padding:8px 0; }
+  .splash-marquee .marquee-track span{ font-size:10px; padding-right:26px; gap:26px; }
+
+  .splash-cta{
+    margin-top:34px; z-index:1; opacity:0; animation:fadeSlide .6s ease 1.15s both; width:100%; max-width:230px;
+  }
+  .splash-cta .btn-primary{ box-shadow:0 12px 24px -10px rgba(11,132,87,.45); }
+  .splash-sub{ margin-top:12px; font-size:11px; color:var(--ink-muted); z-index:1; opacity:0; animation:fadeSlide .6s ease 1.3s both; }
+
+  /* ---------- Login screen ---------- */
+  .login-screen{ height:100%; display:flex; flex-direction:column; align-items:center; padding:36px 24px 22px; }
+  .login-mark{ width:44px; height:44px; border-radius:14px; background:var(--emerald); display:flex; align-items:center; justify-content:center; }
+  .login-mark svg{ width:22px; height:22px; }
+  .login-title{ font-weight:700; font-size:16px; margin-top:12px; }
+  .login-sub{ font-size:11.5px; color:var(--ink-muted); margin-top:2px; }
+
+  .role-toggle{ display:flex; background:var(--surface-alt); border-radius:12px; padding:4px; gap:4px; margin-top:22px; width:100%; max-width:320px; }
+  .role-btn{ flex:1; border:none; background:transparent; padding:9px 8px; border-radius:9px; font-family:'League Spartan',sans-serif; font-weight:600; font-size:11.5px; color:var(--ink-muted); cursor:pointer; transition:all .15s ease; }
+  .role-btn.active{ background:#fff; color:var(--emerald-deep); box-shadow:0 3px 8px -2px rgba(11,41,26,.18); }
+
+  .pin-label{ margin-top:26px; font-weight:600; font-size:13px; color:var(--ink-muted); }
+  .pin-dots{ display:flex; gap:15px; margin:16px 0 26px; }
+  .pin-dots span{ width:13px; height:13px; border-radius:50%; border:1.5px solid var(--border); transition:all .2s ease; }
+  .pin-dots span.filled{ background:var(--emerald); border-color:var(--emerald); transform:scale(1.15); }
+  .pin-dots.success span{ animation:dotPop .3s ease; }
+  @keyframes dotPop{ 0%{ transform:scale(1.15); } 50%{ transform:scale(1.4); } 100%{ transform:scale(1.15); } }
+
+  .keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:100%; max-width:230px; margin-top:auto; }
+  .key{ aspect-ratio:1; border-radius:50%; border:1px solid var(--border); background:#fff; font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .12s ease; user-select:none; }
+  .key:active{ background:var(--emerald-soft); transform:scale(.93); }
+  .key.ghost{ border:none; background:transparent; color:var(--ink-muted); font-size:15px; }
+
+  /* ---------- Onboarding ---------- */
+  .onboard-screen{ height:100%; display:flex; flex-direction:column; padding:20px 24px 26px; }
+  .onboard-skip{ align-self:flex-end; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-muted); cursor:pointer; padding:6px; }
+  .onboard-slide{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .onboard-slide .oic{ width:84px; height:84px; border-radius:26px; display:flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:22px; }
+  .onboard-slide h3{ font-size:18px; font-weight:800; letter-spacing:-0.01em; }
+  .onboard-slide p{ font-size:13px; color:var(--ink-muted); margin-top:8px; max-width:250px; line-height:1.6; }
+  .onboard-dots{ display:flex; gap:7px; justify-content:center; padding:6px 0 4px; }
+  .onboard-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); transition:all .2s ease; }
+  .onboard-dots span.now{ background:var(--emerald); width:20px; border-radius:4px; }
+  .onboard-actions{ margin-top:16px; }
+  .howto-link{
+    margin-top:16px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--emerald); font-weight:600;
+    cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+  }
+
+  .toggle-row{
+    display:flex; justify-content:center; gap:10px; margin:22px auto 36px;
+  }
+  .toggle-btn{
+    font-family:'League Spartan', sans-serif; font-weight:600; font-size:14px;
+    padding:10px 20px; border-radius:999px; border:1.5px solid var(--border);
+    background:var(--surface); color:var(--ink-muted); cursor:pointer;
+    transition:all .2s ease;
+  }
+  .toggle-btn.active{ background:var(--emerald); color:#fff; border-color:var(--emerald); }
+  .toggle-btn:hover{ border-color:var(--emerald); }
+  .toggle-btn:focus-visible{ outline:2px solid var(--emerald); outline-offset:2px; }
+
+  /* ---------- App shell (full viewport, real deploy — no preview frame) ---------- */
+  .app{
+    background:var(--surface);
+    width:100%; height:100dvh;
+    overflow:hidden;
+    position:relative;
+    container-type: inline-size;
+    container-name: app;
+  }
+
+  .screen{ height:100%; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; }
+
+  /* ---------- Pulse ring — signature element ---------- */
+  .pulse{
+    position:relative; width:48px; height:48px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-weight:500; font-size:14px; color:#fff;
+    flex-shrink:0;
+  }
+  .pulse::before, .pulse::after{
+    content:''; position:absolute; inset:0; border-radius:50%;
+    border:1.5px solid currentColor; opacity:.55;
+    animation: pulse-ring 2.4s cubic-bezier(.4,0,.6,1) infinite;
+  }
+  .pulse::after{ animation-delay:.9s; }
+  @keyframes pulse-ring{
+    0%{ transform:scale(1); opacity:.55; }
+    100%{ transform:scale(1.7); opacity:0; }
+  }
+  .pulse-core{
+    position:relative; z-index:1; width:100%; height:100%; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pulse.urgent{ color:var(--coral); } .pulse.urgent .pulse-core{ background:var(--coral); }
+  .pulse.caution{ color:var(--amber); } .pulse.caution .pulse-core{ background:var(--amber); }
+  .pulse.routine{ color:var(--emerald); } .pulse.routine .pulse-core{ background:var(--emerald); }
+  .pulse.sm{ width:12px; height:12px; }
+  .pulse.sm .pulse-core{ }
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse::before,.pulse::after,.fade-in{ animation:none !important; }
+  }
+
+  /* ---------- Shared UI bits ---------- */
+  .top-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px 14px; border-bottom:1px solid var(--border);
+  }
+  .brand{ display:flex; align-items:center; gap:8px; }
+  .brand .mark{
+    width:26px; height:26px; border-radius:8px; background:var(--emerald);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand .mark svg{ width:14px; height:14px; }
+  .brand span{ font-weight:800; font-size:17px; letter-spacing:-0.01em; }
+  .sync{ display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink-muted); }
+  .sync .pulse.sm{ color:var(--emerald); }
+
+  .section-eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-muted); font-weight:500; padding:18px 20px 8px;
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; margin:0 16px 10px; display:flex; align-items:center; gap:12px;
+    cursor:pointer; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{ transform:translateY(-1px); box-shadow:0 8px 20px -10px rgba(11,41,26,.2); }
+  .card .info{ flex:1; min-width:0; }
+  .card .name{ font-weight:600; font-size:14.5px; }
+  .card .meta{ font-size:12px; color:var(--ink-muted); margin-top:2px; }
+  .card .meta .mono{ font-size:11px; }
+  .chip{
+    font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:6px; font-weight:500;
+  }
+  .chip.urgent{ background:var(--coral-soft); color:var(--coral); }
+  .chip.caution{ background:var(--amber-soft); color:#9a6c1f; }
+  .chip.routine{ background:var(--emerald-soft); color:var(--emerald-deep); }
+
+  .bottom-nav{
+    position:absolute; bottom:0; left:0; right:0; background:var(--surface);
+    border-top:1px solid var(--border); display:flex; justify-content:space-around;
+    padding:10px 6px calc(10px + env(safe-area-inset-bottom,0));
+  }
+  .nav-item{
+    display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink-muted);
+    font-size:10px; font-weight:500; width:60px;
+  }
+  .nav-item svg{ width:20px; height:20px; }
+  .nav-item.active{ color:var(--emerald); }
+
+  .btn-primary{
+    background:var(--emerald); color:#fff; border:none; border-radius:12px;
+    padding:14px; font-family:'League Spartan',sans-serif; font-weight:600; font-size:14.5px;
+    width:100%; cursor:pointer; transition:background .15s ease;
+  }
+  .btn-primary:hover{ background:var(--emerald-deep); }
+  .btn-ghost{
+    background:transparent; color:var(--ink); border:1.5px solid var(--border); border-radius:12px;
+    padding:12px; font-family:'League Spartan',sans-serif; font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+
+  .toggle-chip{
+    display:inline-flex; align-items:center; gap:6px; padding:9px 13px; border-radius:10px;
+    border:1.5px solid var(--border); font-size:12.5px; font-weight:500; margin:0 6px 8px 0; cursor:pointer;
+    transition:all .15s ease;
+  }
+  .toggle-chip.on{ border-color:var(--coral); background:var(--coral-soft); color:var(--coral); font-weight:600; }
+
+  .result-panel{
+    margin:16px; padding:20px; border-radius:var(--radius); text-align:center;
+  }
+  .result-panel.urgent{ background:var(--coral-soft); }
+  .result-panel .pulse{ margin:0 auto 10px; width:56px; height:56px; }
+  .result-panel h3{ font-size:18px; font-weight:800; color:var(--coral); letter-spacing:-.01em; }
+  .result-panel p{ font-size:12.5px; color:var(--ink-muted); margin-top:4px; }
+
+  .reason-list{ margin:0 16px 16px; }
+  .reason-list li{
+    list-style:none; display:flex; gap:8px; align-items:flex-start; font-size:13px; color:var(--ink);
+    padding:6px 0; border-bottom:1px dashed var(--border);
+  }
+  .reason-list li:last-child{ border-bottom:none; }
+  .reason-list li::before{ content:'—'; color:var(--coral); font-weight:700; }
+
+  .stepper{ margin:16px; }
+  .step{ display:flex; gap:12px; padding-bottom:18px; position:relative; }
+  .step:not(:last-child)::before{
+    content:''; position:absolute; left:9px; top:22px; bottom:-2px; width:1.5px; background:var(--border);
+  }
+  .step .dot{ width:20px; height:20px; border-radius:50%; background:var(--surface-alt); border:2px solid var(--border); flex-shrink:0; margin-top:1px; }
+  .step.done .dot{ background:var(--emerald); border-color:var(--emerald); }
+  .step.active .dot{ border-color:var(--emerald); position:relative; }
+  .step .label{ font-weight:600; font-size:13.5px; }
+  .step .sub{ font-size:11.5px; color:var(--ink-muted); font-family:'JetBrains Mono',monospace; margin-top:2px; }
+
+  .food-card{
+    margin:0 16px 10px; padding:13px 15px; border-radius:14px; background:var(--sky-soft);
+    display:flex; gap:12px; align-items:center;
+  }
+  .food-card .day{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--sky); font-weight:600; width:36px; }
+  .food-card .desc{ font-size:13px; font-weight:500; }
+  .tag-status{
+    display:inline-block; background:var(--amber-soft); color:#9a6c1f; font-family:'JetBrains Mono',monospace;
+    font-size:11px; padding:4px 10px; border-radius:8px; font-weight:600; margin:10px 16px;
+  }
+
+  /* ---------- fade-in on load ---------- */
+  .fade-in{ animation: fadeSlide .5s ease both; }
+  @keyframes fadeSlide{ from{ opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  /* =================== LAPTOP / CONTAINER-QUERY LAYOUT =================== */
+  .dash{ display:none; height:100%; }
+  .sidebar{ width:190px; background:var(--emerald-deep); color:#fff; flex-shrink:0; display:flex; flex-direction:column; }
+  .sidebar .brand span{ color:#fff; }
+  .sidebar .brand .mark{ background:#fff; }
+  .sidebar .brand .mark svg path{ fill:var(--emerald-deep); }
+  .sidebar-nav{ padding:10px; flex:1; }
+  .sidebar-link{
+    display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:10px; color:rgba(255,255,255,.75);
+    font-size:13.5px; font-weight:500; margin-bottom:2px; cursor:pointer;
+  }
+  .sidebar-link svg{ width:17px; height:17px; }
+  .sidebar-link.active{ background:rgba(255,255,255,.14); color:#fff; font-weight:600; }
+  .sidebar-foot{ padding:14px 16px; border-top:1px solid rgba(255,255,255,.15); font-family:'JetBrains Mono',monospace; font-size:10.5px; color:rgba(255,255,255,.6); display:flex; gap:6px; align-items:center; }
+
+  .dash-center{ flex:1; min-width:0; border-right:1px solid var(--border); display:flex; flex-direction:column; }
+  .dash-toolbar{ padding:16px 22px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+  .dash-toolbar h2{ font-size:18px; font-weight:800; letter-spacing:-.01em; }
+  .table{ flex:1; overflow-y:auto; }
+  .t-row{ display:grid; grid-template-columns:2fr 1.3fr .9fr 1fr .9fr; align-items:center; padding:13px 22px; border-bottom:1px solid var(--border); cursor:pointer; font-size:13px; }
+  .t-row.head{ font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); padding-top:10px; padding-bottom:10px; }
+  .t-row:not(.head):hover{ background:var(--surface-alt); }
+  .t-row .who{ display:flex; align-items:center; gap:10px; font-weight:600; }
+  .t-row.selected{ background:var(--emerald-soft); }
+
+  .dash-right{ width:330px; flex-shrink:0; overflow-y:auto; }
+  .dash-right .rp-head{ padding:20px 20px 14px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:center; }
+  .rp-tabs{ display:flex; gap:4px; padding:12px 20px 0; }
+  .rp-tab{ font-size:12px; font-weight:600; padding:7px 12px; border-radius:8px; color:var(--ink-muted); cursor:pointer; }
+  .rp-tab.active{ background:var(--emerald-soft); color:var(--emerald-deep); }
+
+  @container app (min-width: 860px){
+    .screen.mobile-only{ display:none; }
+    .dash{ display:flex; }
+  }
+  @container app (max-width: 859.9px){
+    .dash{ display:none; }
+  }
+
+  /* ---------- Caregiver mode ---------- */
+  .mode-link{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--emerald); font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; gap:4px; background:var(--emerald-soft);
+    padding:5px 10px; border-radius:8px;
+  }
+  .lang-chip{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; padding:5px 9px; border:1px solid var(--border);
+    border-radius:8px; color:var(--ink-muted);
+  }
+
+  .mascot-wrap{ display:flex; flex-direction:column; align-items:center; padding:20px 20px 4px; text-align:center; }
+  .mascot-svg{ width:108px; height:132px; }
+  .wave-arm{ transform-box:fill-box; transform-origin:15% 90%; animation:wave 1.6s ease-in-out 2; }
+  @keyframes wave{ 0%,100%{ transform:rotate(0deg); } 25%{ transform:rotate(-22deg); } 50%{ transform:rotate(0deg); } 75%{ transform:rotate(-22deg); } }
+  .mascot-body{ transform-box:fill-box; transform-origin:50% 100%; animation:breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe{ 0%,100%{ transform:scaleY(1); } 50%{ transform:scaleY(1.015); } }
+
+  .speech-bubble{
+    background:var(--surface-alt); border-radius:16px; padding:11px 14px; margin-top:8px; max-width:270px;
+    font-size:12.5px; font-weight:500; position:relative; display:flex; align-items:center; gap:9px; text-align:left;
+  }
+  .speech-bubble::before{
+    content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+    border-width:0 6px 6px; border-style:solid; border-color:transparent transparent var(--surface-alt);
+  }
+  .speech-bubble .say-btn{
+    border:none; background:var(--emerald); color:#fff; width:24px; height:24px; border-radius:50%;
+    flex-shrink:0; cursor:pointer; font-size:11px;
+  }
+
+  .quick-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:18px 16px; }
+  .quick-tile{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 10px;
+    text-align:center; cursor:pointer; transition:transform .15s ease;
+  }
+  .quick-tile:hover{ transform:translateY(-2px); box-shadow:0 8px 20px -10px rgba(11,41,26,.2); }
+  .quick-tile.urgent-tile{ background:var(--coral-soft); }
+  .quick-tile .ic{ font-size:26px; display:block; margin-bottom:6px; }
+  .quick-tile .lb{ font-weight:600; font-size:12.5px; }
+
+  .reminder-banner{
+    margin:0 16px 16px; background:var(--amber-soft); border-radius:14px; padding:12px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .reminder-banner .txt{ font-size:12.5px; font-weight:600; }
+  .mark-done{
+    background:#fff; border:1.5px solid var(--amber); color:#9a6c1f; font-size:10.5px; font-weight:700;
+    padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap;
+  }
+
+  .progress-dots{ display:flex; gap:6px; justify-content:center; padding:16px 0 2px; }
+  .progress-dots span{ width:7px; height:7px; border-radius:50%; background:var(--border); transition:all .2s ease; }
+  .progress-dots span.done{ background:var(--emerald); }
+  .progress-dots span.now{ background:var(--emerald); box-shadow:0 0 0 3px var(--emerald-soft); }
+
+  .question-card{ margin:10px 16px; padding:26px 18px; border-radius:20px; background:var(--surface-alt); text-align:center; }
+  .question-card .qic{ font-size:36px; }
+  .question-card .qtx{ font-size:15px; font-weight:600; margin-top:10px; line-height:1.45; }
+  .choice-row{ display:flex; gap:10px; padding:14px 16px 0; }
+  .choice-btn{
+    flex:1; padding:14px; border-radius:14px; border:1.5px solid var(--border); background:#fff;
+    font-family:'League Spartan',sans-serif; font-weight:700; font-size:14px; cursor:pointer; transition:all .15s ease;
+  }
+  .choice-btn.yes:hover{ border-color:var(--coral); color:var(--coral); background:var(--coral-soft); }
+  .choice-btn.no:hover{ border-color:var(--emerald); color:var(--emerald); background:var(--emerald-soft); }
+
+  .result-panel.routine{ background:var(--emerald-soft); }
+  .result-panel.routine h3{ color:var(--emerald-deep); }
+  .result-panel.caution{ background:var(--amber-soft); }
+  .result-panel.caution h3{ color:#9a6c1f; }
+  .btn-primary.coral{ background:var(--coral); }
+  .btn-primary.coral:hover{ background:#b8422e; }
+
+  .reminder-card{ margin:0 16px 10px; padding:13px 15px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+  .reminder-card .ric{ font-size:22px; }
+  .reminder-card .info2{ flex:1; }
+  .reminder-card .t1{ font-weight:600; font-size:13.5px; }
+  .reminder-card .t2{ font-size:11px; color:var(--ink-muted); font-family:'JetBrains Mono',monospace; margin-top:2px; }
+
+  /* ---------- Guide tip (in-app walkthrough) ---------- */
+  .guide-tip{
+    position:absolute; left:12px; right:12px; bottom:76px; z-index:20;
+    background:var(--emerald-deep); color:#fff; border-radius:16px;
+    padding:12px 14px; display:flex; align-items:center; gap:10px;
+    box-shadow:0 14px 30px -10px rgba(7,92,59,.5);
+    animation:guideIn .35s cubic-bezier(.2,1.2,.4,1) both;
+  }
+  @keyframes guideIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+  .guide-tip .guide-tip-icon{ font-size:20px; flex-shrink:0; }
+  .guide-tip .guide-tip-text{ font-size:12.5px; line-height:1.45; flex:1; }
+  .guide-tip .guide-tip-close{
+    background:rgba(255,255,255,.18); border:none; color:#fff; font-family:'League Spartan',sans-serif;
+    font-weight:700; font-size:11px; padding:7px 11px; border-radius:8px; cursor:pointer; flex-shrink:0;
+  }
+  .guide-tip .guide-tip-close:hover{ background:rgba(255,255,255,.28); }
+
+  /* ---------- Global error toast — replaces silent failures ---------- */
+  .app-error-toast{
+    position:absolute; top:14px; left:12px; right:12px; z-index:60;
+    background:var(--coral); color:#fff; border-radius:14px; padding:13px 14px;
+    font-size:12.5px; line-height:1.5; display:flex; align-items:flex-start; gap:10px;
+    box-shadow:0 16px 34px -12px rgba(0,0,0,.4);
+    animation:guideIn .3s ease both;
+  }
+  .app-error-toast span{ flex:1; }
+  .app-error-toast button{
+    background:rgba(255,255,255,.22); border:none; color:#fff; border-radius:8px;
+    padding:6px 10px; font-weight:700; font-size:11px; cursor:pointer; flex-shrink:0;
+  }
+
+  /* ---------- Text input fields (Register / Add Household) ---------- */
+  .field-group{ padding:0 20px 14px; }
+  .field-label{ font-size:12px; font-weight:600; color:var(--ink-muted); margin-bottom:6px; display:block; }
+  .field-input{
+    width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid var(--border);
+    background:#fff; font-family:'League Spartan',sans-serif; font-size:14.5px; color:var(--ink);
+    outline:none; transition:border-color .15s ease;
+  }
+  .field-input:focus{ border-color:var(--emerald); }
+  .field-input.error{ border-color:var(--coral); }
+  .field-error{ font-size:11.5px; color:var(--coral); margin-top:5px; display:none; }
+  .field-error.show{ display:block; }
+  .search-input-wrap{ padding:14px 20px 6px; position:relative; }
+  .search-input-wrap .field-input{ padding-left:38px; }
+  .search-input-wrap .search-icon{ position:absolute; left:36px; top:27px; color:var(--ink-muted); pointer-events:none; }
+
+  .visit-tag{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink-muted);
+    background:var(--surface-alt); padding:3px 8px; border-radius:6px; display:inline-block; margin-top:2px;
+  }
+
+  /* ---------- Immunization checklist ---------- */
+  .immun-row{
+    display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--border);
+    border-radius:14px; margin-bottom:8px; cursor:pointer; transition:all .15s ease;
+  }
+  .immun-row.given{ background:var(--emerald-soft); border-color:var(--emerald-soft); }
+  .immun-row.overdue{ background:var(--coral-soft); border-color:var(--coral-soft); }
+  .immun-check{
+    width:22px; height:22px; border-radius:7px; border:2px solid var(--border); background:#fff;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; color:#fff;
+  }
+  .immun-row.given .immun-check{ background:var(--emerald); border-color:var(--emerald); }
+  .immun-info{ flex:1; }
+  .immun-label{ font-size:13px; font-weight:600; }
+  .immun-due{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-muted); margin-top:1px; }
+
+  /* ---------- District Nutrition Officer: trend board ---------- */
+  .trend-board{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:16px; margin-bottom:12px;
+  }
+  .trend-board-title{ font-size:12px; font-weight:700; color:var(--ink); margin-bottom:12px; }
+  .trend-row{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+  .trend-row:last-child{ margin-bottom:0; }
+  .trend-label{ width:96px; font-size:11.5px; color:var(--ink-muted); flex-shrink:0; }
+  .trend-bar-track{ flex:1; background:var(--surface-alt); border-radius:6px; height:13px; overflow:hidden; }
+  .trend-bar-fill{ height:100%; border-radius:6px; transition:width .5s cubic-bezier(.2,.8,.3,1); }
+  .trend-count{ width:24px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; flex-shrink:0; }
+
+  .trend-week-row{ display:flex; align-items:flex-end; gap:7px; height:64px; margin-top:4px; }
+  .trend-week-bar-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .trend-week-bar{ width:100%; border-radius:4px 4px 0 0; background:var(--sky); min-height:3px; transition:height .5s cubic-bezier(.2,.8,.3,1); }
+  .trend-week-day{ font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--ink-muted); margin-top:5px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+      <!-- =================== SPLASH =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-splash" data-screen="splash">
+        <div class="splash-screen">
+          <div class="blob blob1"></div>
+          <div class="blob blob2"></div>
+          <div class="blob blob3"></div>
+
+          <div class="splash-rings">
+            <span class="ring"></span>
+            <span class="ring"></span>
+            <span class="ring"></span>
+            <div class="splash-mark">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.9-10-9.3C.3 8.2 2 4.5 5.6 4c2-.3 3.7.6 4.9 2.3.9-1.7 2.9-2.6 4.9-2.3C19 4.5 20.7 8.2 19 11.7 17 16 12 21 12 21z" fill="#fff"/></svg>
+            </div>
+          </div>
+
+          <div class="splash-word">Responda</div>
+
+          <div class="splash-marquee">
+            <div class="marquee-wrap">
+              <div class="marquee-track">
+                <span>EMPOWERING FRONTLINE HEALTH WORKERS AND CAREGIVERS TO ACCELERATE MATERNAL AND UNDER-FIVE SURVIVAL IN NORTHERN GHANA &nbsp;•</span>
+                <span>EMPOWERING FRONTLINE HEALTH WORKERS AND CAREGIVERS TO ACCELERATE MATERNAL AND UNDER-FIVE SURVIVAL IN NORTHERN GHANA &nbsp;•</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="splash-cta">
+            <button class="btn-primary" onclick="obReset(); setScreen('onboarding')">Get started</button>
+          </div>
+          <div class="splash-sub">Works fully offline · syncs when connected</div>
+        </div>
+      </div>
+
+      <!-- =================== ONBOARDING =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-onboarding" data-screen="onboarding" style="display:none;">
+        <div class="onboard-screen">
+          <span class="onboard-skip" onclick="setScreen('login')">Skip</span>
+
+          <div class="ob-slide onboard-slide">
+            <div class="oic" style="background:var(--emerald-soft);">🩺</div>
+            <h3>Spot risk early</h3>
+            <p>Quick offline checklists flag pregnancy and child danger signs the moment you see them — no signal needed.</p>
+          </div>
+          <div class="ob-slide onboard-slide" style="display:none;">
+            <div class="oic" style="background:var(--coral-soft);">🚑</div>
+            <h3>Refer with confidence</h3>
+            <p>Referral notes are generated instantly and sync to the nearest facility the moment a connection appears.</p>
+          </div>
+          <div class="ob-slide onboard-slide" style="display:none;">
+            <div class="oic" style="background:var(--sky-soft);">🥣</div>
+            <h3>Guide better nutrition</h3>
+            <p>Local, seasonal food plans for every child's age and growth status — never a generic chart.</p>
+          </div>
+          <div class="ob-slide onboard-slide" style="display:none;">
+            <div class="oic" style="background:var(--amber-soft);">👩‍👧</div>
+            <h3>Caregivers, empowered too</h3>
+            <p>Simple self-checks, reminders and feeding guidance caregivers can use on their own, in plain language.</p>
+          </div>
+
+          <div class="onboard-dots" id="ob-dots"><span class="now"></span><span></span><span></span><span></span></div>
+          <div class="onboard-actions">
+            <button class="btn-primary" onclick="obNext()"><span id="ob-next-label">Next</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================== LOGIN =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-login" data-screen="login" style="display:none;">
+        <div class="login-screen">
+          <div class="login-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.9-10-9.3C.3 8.2 2 4.5 5.6 4c2-.3 3.7.6 4.9 2.3.9-1.7 2.9-2.6 4.9-2.3C19 4.5 20.7 8.2 19 11.7 17 16 12 21 12 21z" fill="#fff"/></svg></div>
+          <div class="login-title">Welcome to Responda</div>
+          <div class="login-sub">Sign in to continue</div>
+          <span class="howto-link" onclick="resetGuideTips(); obReset(); setScreen('onboarding')">How this app works</span>
+
+          <div class="role-toggle">
+            <button class="role-btn active" data-role="worker" onclick="setRole('worker',this)">Health Worker</button>
+            <button class="role-btn" data-role="caregiver" onclick="setRole('caregiver',this)">Caregiver</button>
+            <button class="role-btn" data-role="nutrition-officer" onclick="setRole('nutrition-officer',this)">Nutrition Officer</button>
+          </div>
+
+          <div id="login-staff-fields" style="width:100%;max-width:280px;margin-top:24px;">
+            <label class="field-label">Staff ID</label>
+            <input id="login-staff-id" class="field-input" type="text" placeholder="e.g. GHS-CW-0417" autocomplete="off" oninput="updateContinueButtonLabel()" />
+            <div id="login-staff-id-error" class="field-error">Please enter your Staff ID.</div>
+          </div>
+
+          <div id="login-facility-fields" style="width:100%;max-width:280px;margin-top:14px;">
+            <label class="field-label">Facility / CHPS compound</label>
+            <input id="login-facility" class="field-input" type="text" placeholder="e.g. Zorborgu CHPS Compound" autocomplete="off" />
+            <div id="login-facility-error" class="field-error">Please enter your facility name.</div>
+          </div>
+
+          <div id="login-region-fields" style="width:100%;max-width:280px;margin-top:14px;">
+            <label class="field-label">Region</label>
+            <select id="login-region" class="field-input">
+              <option value="">Select a region…</option>
+              <option value="Northern">Northern</option>
+              <option value="North East">North East</option>
+              <option value="Savannah">Savannah</option>
+              <option value="Upper East">Upper East</option>
+              <option value="Upper West">Upper West</option>
+            </select>
+            <div id="login-region-error" class="field-error">Please select your region.</div>
+          </div>
+
+          <div id="login-caregiver-note" style="display:none; max-width:260px; text-align:center; margin-top:24px;">
+            <p class="muted">No password needed — next we'll link this device to your (or your child's) health record.</p>
+          </div>
+
+          <div id="login-error-banner" class="field-error" style="display:none; max-width:280px; text-align:center; margin-top:14px;"></div>
+
+          <button class="btn-primary" id="login-continue-btn" style="width:100%;max-width:280px;margin-top:22px;" onclick="completeLogin()">Continue</button>
+        </div>
+      </div>
+
+      <!-- =================== MOBILE: HOME =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-home" data-screen="home" style="display:none;">
+        <div class="top-bar">
+          <div class="brand">
+            <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.9-10-9.3C.3 8.2 2 4.5 5.6 4c2-.3 3.7.6 4.9 2.3.9-1.7 2.9-2.6 4.9-2.3C19 4.5 20.7 8.2 19 11.7 17 16 12 21 12 21z" fill="#fff"/></svg></div>
+            <span>Responda</span>
+          </div>
+          <div class="sync"><span class="pulse sm routine"><span class="pulse-core"></span></span> SYNCED · 0.2s ago</div>
+        </div>
+
+        <div style="padding:12px 20px 0; display:flex; justify-content:flex-end;">
+          <span class="mode-link" onclick="goToCaregiverLogin()">👩‍👧 Caregiver view</span>
+        </div>
+
+        <div style="padding:14px 20px 4px;">
+          <div style="font-size:13px;color:var(--ink-muted);">Good morning,</div>
+          <div style="font-size:19px;font-weight:700;" id="home-staff-id">CHPS Worker</div>
+          <div class="mono" style="font-size:11px;color:var(--ink-muted);margin-top:2px;" id="home-facility-region">—</div>
+        </div>
+
+        <div id="caregiver-reports-section" style="display:none;">
+          <div class="section-eyebrow fade-in" style="color:var(--coral);">🔔 Caregiver reports</div>
+          <div id="caregiver-reports-list"></div>
+        </div>
+
+        <div class="section-eyebrow fade-in" style="animation-delay:.05s;" id="household-count">Priority today · loading…</div>
+
+        <div id="household-list">
+          <div class="card fade-in" style="animation-delay:.1s;">
+            <span class="pulse routine"><span class="pulse-core">··</span></span>
+            <div class="info">
+              <div class="name">Loading households…</div>
+              <div class="meta">Reading from local cache</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-eyebrow">Quick actions</div>
+        <div style="padding:0 16px 90px; display:flex; gap:10px;">
+          <button class="btn-ghost" style="flex:1;" onclick="setScreen('register')">🔍 Household register</button>
+          <button class="btn-ghost" style="flex:1;">🎙 Voice entry</button>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item active" data-nav="home" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" data-nav="home" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8a3 3 0 100-6"/></svg>Households</div>
+          <div class="nav-item" data-nav="referral" onclick="setScreen('referral')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h11m0 0l-4-4m4 4l-4 4"/><path d="M20 5v14"/></svg>Referrals</div>
+          <div class="nav-item" data-nav="nutrition" onclick="openNutritionAuto()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Nutrition</div>
+        </div>
+      </div>
+
+      <!-- =================== HOUSEHOLD REGISTER =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-register" data-screen="register" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('home')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div style="font-weight:700;font-size:15px;">Household register</div>
+          </div>
+        </div>
+
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            id="register-search"
+            class="field-input"
+            type="text"
+            placeholder="Type a client or household name…"
+            autocomplete="off"
+            oninput="renderRegisterResults(this.value)"
+          />
+        </div>
+
+        <div id="register-results" style="padding-top:8px;">
+          <p class="muted" style="padding:0 20px;">Start typing a name to find or check in a household.</p>
+        </div>
+
+        <div id="register-add-new" style="display:none; padding:4px 16px 90px;">
+          <div class="card" style="cursor:default; flex-direction:column; align-items:stretch;">
+            <div class="meta" style="margin-bottom:10px;">
+              No household matches "<span id="register-add-name" class="mono"></span>" yet.
+            </div>
+            <button class="btn-primary" onclick="openAddHouseholdForm()">+ Add as new household</button>
+          </div>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8a3 3 0 100-6"/></svg>Households</div>
+          <div class="nav-item" onclick="setScreen('referral')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h11m0 0l-4-4m4 4l-4 4"/><path d="M20 5v14"/></svg>Referrals</div>
+          <div class="nav-item" onclick="openNutritionAuto()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Nutrition</div>
+        </div>
+      </div>
+
+      <!-- =================== ADD HOUSEHOLD =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-add-household" data-screen="add-household" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('register')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div style="font-weight:700;font-size:15px;">New household</div>
+          </div>
+        </div>
+
+        <div class="field-group" style="padding-top:16px;">
+          <label class="field-label">Client / household name</label>
+          <input id="add-hh-name" class="field-input" type="text" placeholder="e.g. Fati Mahama" />
+          <div id="add-hh-name-error" class="field-error">Please enter a name.</div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Community</label>
+          <input id="add-hh-community" class="field-input" type="text" placeholder="e.g. Zorborgu" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Who are we tracking?</label>
+          <div class="role-toggle" id="add-hh-type-toggle" style="max-width:none;">
+            <button type="button" class="role-btn active" onclick="toggleAddType('pregnant', this)">Pregnant woman</button>
+            <button type="button" class="role-btn" onclick="toggleAddType('child', this)">Child under 5</button>
+          </div>
+        </div>
+
+        <div id="add-hh-pregnant-fields">
+          <div class="field-group">
+            <label class="field-label">Weeks pregnant</label>
+            <input id="add-hh-gestation" class="field-input" type="number" min="1" max="42" placeholder="e.g. 32" />
+          </div>
+        </div>
+
+        <div id="add-hh-child-fields" style="display:none;">
+          <div class="field-group">
+            <label class="field-label">Age (months)</label>
+            <input id="add-hh-age" class="field-input" type="number" min="0" max="59" placeholder="e.g. 14" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Distance from facility (km, optional)</label>
+          <input id="add-hh-distance" class="field-input" type="number" min="0" step="0.1" placeholder="e.g. 3.1" />
+        </div>
+
+        <div style="padding:8px 20px 90px;">
+          <button class="btn-primary" onclick="saveNewHousehold()">Save household</button>
+        </div>
+      </div>
+
+      <!-- =================== MOBILE: TRIAGE =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-triage" data-screen="triage" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('home')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:15px;" id="triage-name">—</div>
+              <div class="mono" style="font-size:10.5px;color:var(--ink-muted);" id="triage-meta">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-eyebrow">Danger signs · tap all that apply</div>
+        <div style="padding:0 16px;" id="triage-signs"><!-- populated by renderTriageSigns() --></div>
+
+        <div style="padding:12px 16px 0;">
+          <button class="btn-ghost" style="width:100%;" onclick="runTriageAssessment()">Check risk</button>
+        </div>
+
+        <div id="triage-result"><!-- populated by runTriageAssessment() --></div>
+
+        <div id="triage-immunizations" style="display:none;">
+          <div class="section-eyebrow">Immunizations · this visit</div>
+          <div id="triage-immunizations-list" style="padding:0 16px 90px;"></div>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item active" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8a3 3 0 100-6"/></svg>Households</div>
+          <div class="nav-item" onclick="setScreen('referral')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h11m0 0l-4-4m4 4l-4 4"/><path d="M20 5v14"/></svg>Referrals</div>
+          <div class="nav-item" onclick="openNutritionAuto()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Nutrition</div>
+        </div>
+      </div>
+
+      <!-- =================== MOBILE: REFERRAL =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-referral" data-screen="referral" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('triage')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div style="font-weight:700;font-size:15px;">Referral note</div>
+          </div>
+        </div>
+
+        <div class="card" id="referral-summary" style="margin:16px; flex-direction:column; align-items:stretch; cursor:default;">
+          <div class="meta mono">No referral generated yet — go to a household's Triage screen first.</div>
+        </div>
+
+        <div class="section-eyebrow">Status</div>
+        <div class="stepper" id="referral-stepper">
+          <div class="step"><div class="dot"></div><div><div class="label">No referral in progress</div></div></div>
+        </div>
+        <p class="mono" id="referral-fallback-note" style="padding:0 16px; font-size:11px; color:var(--ink-muted);"></p>
+
+        <div style="padding:16px 16px 90px;">
+          <button class="btn-ghost" style="width:100%;">View facility contact</button>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8a3 3 0 100-6"/></svg>Households</div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h11m0 0l-4-4m4 4l-4 4"/><path d="M20 5v14"/></svg>Referrals</div>
+          <div class="nav-item" onclick="openNutritionAuto()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Nutrition</div>
+        </div>
+      </div>
+
+      <!-- =================== MOBILE: NUTRITION =================== -->
+      <div class="screen mobile-only m-screen" id="mobile-nutrition" data-screen="nutrition" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen(nutritionReturnScreen)" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div>
+              <div style="font-weight:700;font-size:15px;" id="nutrition-name">—</div>
+              <div class="mono" style="font-size:10.5px;color:var(--ink-muted);" id="nutrition-meta">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="nutrition-content"><!-- populated by renderNutritionPlan() --></div>
+
+        <div class="bottom-nav" id="nutrition-bottom-nav">
+          <div class="nav-item" onclick="setScreen(nutritionReturnScreen)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8a3 3 0 100-6"/></svg>Households</div>
+          <div class="nav-item" onclick="setScreen('referral')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h11m0 0l-4-4m4 4l-4 4"/><path d="M20 5v14"/></svg>Referrals</div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Nutrition</div>
+        </div>
+      </div>
+
+      <!-- =================== CAREGIVER: LINK HOUSEHOLD =================== -->
+      <div class="screen mobile-only m-screen" id="cg-link" data-screen="cg-link" style="display:none;">
+        <div class="top-bar">
+          <span class="mode-link" onclick="setScreen('home')">← Health worker view</span>
+        </div>
+        <div style="padding:20px 20px 4px;">
+          <div style="font-weight:700;font-size:17px;">Whose record is this?</div>
+          <div class="muted" style="margin-top:4px;">Find the name your health worker registered you under. You'll only need to do this once on this device.</div>
+        </div>
+
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input
+            id="cg-link-search"
+            class="field-input"
+            type="text"
+            placeholder="Type your name…"
+            autocomplete="off"
+            oninput="renderCaregiverLinkResults(this.value)"
+          />
+        </div>
+
+        <div id="cg-link-results" style="padding-top:8px;">
+          <p class="muted" style="padding:0 20px;">Start typing to find your record.</p>
+        </div>
+
+        <div style="padding:16px 20px 90px;">
+          <p class="muted">Can't find your name? Ask your CHPS worker to register your household first.</p>
+        </div>
+      </div>
+
+      <!-- =================== DISTRICT NUTRITION OFFICER: HOME =================== -->
+      <div class="screen mobile-only m-screen" id="dno-home" data-screen="dno-home" style="display:none;">
+        <div class="top-bar">
+          <div class="brand">
+            <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.9-10-9.3C.3 8.2 2 4.5 5.6 4c2-.3 3.7.6 4.9 2.3.9-1.7 2.9-2.6 4.9-2.3C19 4.5 20.7 8.2 19 11.7 17 16 12 21 12 21z" fill="#fff"/></svg></div>
+            <span>Responda</span>
+          </div>
+          <span class="mode-link" onclick="setScreen('login')">↩ Log out</span>
+        </div>
+
+        <div style="padding:14px 20px 4px;">
+          <div style="font-size:13px;color:var(--ink-muted);">District Nutrition Officer</div>
+          <div style="font-size:19px;font-weight:700;" id="dno-facility-name">Loading facility…</div>
+          <div class="mono" style="font-size:11px;color:var(--ink-muted);margin-top:2px;" id="dno-region">—</div>
+        </div>
+
+        <div id="dno-flagged-section" style="display:none;">
+          <div class="section-eyebrow" style="color:var(--coral);">🔔 Flagged children · needs action</div>
+          <div id="dno-flagged-list"></div>
+        </div>
+
+        <div id="dno-stats" class="quick-grid"><!-- populated by renderNutritionOfficerHome() --></div>
+
+        <div class="section-eyebrow">Trend analysis</div>
+        <div id="dno-trends" style="padding:0 20px 6px;"><!-- populated by renderNutritionTrends() --></div>
+
+        <div class="section-eyebrow">Children · priority first</div>
+        <div id="dno-child-list"><!-- populated by renderNutritionOfficerHome() --></div>
+
+        <div style="height:24px;"></div>
+      </div>
+
+      <!-- =================== CAREGIVER: HOME =================== -->
+      <div class="screen mobile-only m-screen" id="cg-home" data-screen="cg-home" style="display:none;">
+        <div class="top-bar">
+          <span class="mode-link" onclick="setScreen('home')">← Health worker view</span>
+          <span class="lang-chip" title="More languages coming soon">EN ▾</span>
+        </div>
+
+        <div class="mascot-wrap fade-in">
+          <svg class="mascot-svg" viewBox="0 0 120 150">
+            <path class="mascot-body" d="M28 150 V110 Q28 86 60 86 Q92 86 92 110 V150 Z" fill="#0B8457"/>
+            <path d="M50 88 L60 100 L70 88" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="60" cy="52" r="30" fill="#E7B58C"/>
+            <path d="M30 48 Q30 20 60 20 Q90 20 90 48 Q90 34 60 34 Q30 34 30 48Z" fill="#3B2A20"/>
+            <rect x="46" y="16" width="28" height="10" rx="4" fill="#fff" stroke="#0B8457" stroke-width="2"/>
+            <rect x="57" y="12" width="6" height="6" fill="#D6553F"/>
+            <circle cx="50" cy="54" r="3" fill="#16241C"/>
+            <circle cx="70" cy="54" r="3" fill="#16241C"/>
+            <path d="M48 66 Q60 76 72 66" stroke="#16241C" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <path d="M30 112 Q18 118 20 138" stroke="#0B8457" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <g class="wave-arm">
+              <path d="M90 112 Q108 100 104 78" stroke="#0B8457" stroke-width="16" stroke-linecap="round" fill="none"/>
+              <circle cx="104" cy="76" r="9" fill="#E7B58C"/>
+            </g>
+          </svg>
+          <div class="speech-bubble">
+            <span id="cg-greeting">Welcome back! I'm Abena — here to help you look after your baby.</span>
+            <button class="say-btn" title="Hear this aloud">🔊</button>
+          </div>
+        </div>
+
+        <div class="quick-grid">
+          <div class="quick-tile urgent-tile" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><span class="ic">🩺</span><span class="lb" id="cg-checkup-tile-label">Check my baby</span></div>
+          <div class="quick-tile" onclick="openCaregiverFeeding()"><span class="ic">🥣</span><span class="lb">Feeding guide</span></div>
+          <div class="quick-tile" onclick="openCaregiverReminders()"><span class="ic">🔔</span><span class="lb">Reminders</span></div>
+          <div class="quick-tile"><span class="ic">📞</span><span class="lb">Call my worker</span></div>
+        </div>
+
+        <div class="reminder-banner" id="cg-next-vaccine-banner" style="display:none;">
+          <span class="txt" id="cg-next-vaccine-text">💉 Next vaccine due</span>
+        </div>
+
+        <div class="bottom-nav">
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
+          <div class="nav-item" onclick="openCaregiverFeeding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item" onclick="openCaregiverReminders()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
+        </div>
+      </div>
+
+      <!-- =================== CAREGIVER: SELF-CHECK =================== -->
+      <div class="screen mobile-only m-screen" id="cg-checkup" data-screen="cg-checkup" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('cg-home')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div style="font-weight:700;font-size:15px;" id="cg-checkup-title">How are you today?</div>
+          </div>
+        </div>
+
+        <div class="section-eyebrow">Tap anything you're noticing right now</div>
+        <div id="cg-signs" style="padding:0 16px;"><!-- populated by renderCaregiverSigns() --></div>
+
+        <div style="padding:12px 16px 0;">
+          <button class="btn-primary" style="width:100%;" onclick="runCaregiverCheck()">Check &amp; report to my worker</button>
+        </div>
+
+        <div id="cg-result"><!-- populated by runCaregiverCheck() --></div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="setScreen('cg-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
+          <div class="nav-item" onclick="openCaregiverFeeding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item" onclick="openCaregiverReminders()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
+        </div>
+      </div>
+
+      <!-- =================== CAREGIVER: FEEDING GUIDE =================== -->
+      <div class="screen mobile-only m-screen" id="cg-feeding" data-screen="cg-feeding" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('cg-home')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div style="font-weight:700;font-size:15px;" id="cg-feeding-title">Feeding guide</div>
+          </div>
+        </div>
+
+        <div id="cg-feeding-content"><!-- populated by renderCaregiverFeeding() --></div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="setScreen('cg-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item" onclick="openCaregiverReminders()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
+        </div>
+      </div>
+
+      <!-- =================== CAREGIVER: REMINDERS =================== -->
+      <div class="screen mobile-only m-screen" id="cg-reminders" data-screen="cg-reminders" style="display:none;">
+        <div class="top-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <svg onclick="setScreen('cg-home')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            <div style="font-weight:700;font-size:15px;">Your reminders</div>
+          </div>
+        </div>
+
+        <div id="cg-reminders-content"><!-- populated by renderCaregiverReminders() --></div>
+
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="setScreen('cg-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
+          <div class="nav-item" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
+          <div class="nav-item" onclick="openCaregiverFeeding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
+        </div>
+      </div>
+
+      <!-- =================== LAPTOP: DASHBOARD =================== -->
+      <div class="dash">
+        <div class="sidebar">
+          <div style="padding:18px 16px;"><div class="brand"><div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.9-10-9.3C.3 8.2 2 4.5 5.6 4c2-.3 3.7.6 4.9 2.3.9-1.7 2.9-2.6 4.9-2.3C19 4.5 20.7 8.2 19 11.7 17 16 12 21 12 21z"/></svg></div><span>Responda</span></div></div>
+          <div class="sidebar-nav">
+            <div class="sidebar-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 8a3 3 0 100-6"/></svg>Households</div>
+            <div class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h11m0 0l-4-4m4 4l-4 4"/><path d="M20 5v14"/></svg>Referrals</div>
+            <div class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Nutrition</div>
+            <div class="sidebar-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5m6 14V9m6 10V13"/></svg>District Reports</div>
+          </div>
+          <div class="sidebar-foot"><span class="pulse sm routine"><span class="pulse-core"></span></span> ONLINE · District node</div>
+        </div>
+
+        <div class="dash-center">
+          <div class="dash-toolbar">
+            <h2>Households — Zorborgu catchment</h2>
+            <button class="btn-primary" style="width:auto;padding:10px 18px;" onclick="addHouseholdDesktopQuick()">+ Add household</button>
+          </div>
+          <div class="table">
+            <div class="t-row head"><div>Name</div><div>Condition</div><div>Risk</div><div>Last visit</div><div>Distance</div></div>
+            <div class="t-row selected">
+              <div class="who"><span class="pulse urgent sm"><span class="pulse-core"></span></span>Fati Mahama</div>
+              <div class="mono">Pregnant · 32 wks</div>
+              <div><span class="chip urgent">URGENT</span></div>
+              <div class="mono">Today</div>
+              <div class="mono">1.4 km</div>
+            </div>
+            <div class="t-row">
+              <div class="who"><span class="pulse caution sm"><span class="pulse-core"></span></span>Abdul-Rahim H.</div>
+              <div class="mono">Child · 14 mo</div>
+              <div><span class="chip caution">CAUTION</span></div>
+              <div class="mono">11d ago</div>
+              <div class="mono">3.1 km</div>
+            </div>
+            <div class="t-row">
+              <div class="who"><span class="pulse routine sm"><span class="pulse-core"></span></span>Asana's household</div>
+              <div class="mono">Child · 8 mo</div>
+              <div><span class="chip routine">ROUTINE</span></div>
+              <div class="mono">2d ago</div>
+              <div class="mono">0.6 km</div>
+            </div>
+            <div class="t-row">
+              <div class="who"><span class="pulse routine sm"><span class="pulse-core"></span></span>Salamatu Iddi</div>
+              <div class="mono">Pregnant · 18 wks</div>
+              <div><span class="chip routine">ROUTINE</span></div>
+              <div class="mono">6d ago</div>
+              <div class="mono">4.8 km</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-right">
+          <div class="rp-head">
+            <span class="pulse urgent"><span class="pulse-core">FM</span></span>
+            <div>
+              <div style="font-weight:700;font-size:15px;">Fati Mahama</div>
+              <div class="mono" style="font-size:11px;color:var(--ink-muted);">HH-2291 · Pregnant, 32 wks</div>
+            </div>
+          </div>
+          <div class="rp-tabs">
+            <div class="rp-tab active" data-tab="triage" onclick="setDashTab('triage')">Triage</div>
+            <div class="rp-tab" data-tab="referral" onclick="setDashTab('referral')">Referral</div>
+            <div class="rp-tab" data-tab="nutrition" onclick="setDashTab('nutrition')">Nutrition</div>
+          </div>
+
+          <div class="dash-tab-panel" data-panel="triage">
+            <div class="result-panel urgent fade-in" style="margin-top:16px;">
+              <span class="pulse urgent"><span class="pulse-core"></span></span>
+              <h3>Urgent — Refer now</h3>
+              <p>3 danger signs detected during today's check-in</p>
+            </div>
+            <ul class="reason-list">
+              <li>Blood pressure 152/98 — elevated</li>
+              <li>Severe headache reported, onset today</li>
+              <li>Reduced fetal movement, past 24 hrs</li>
+            </ul>
+            <div style="padding:0 16px;">
+              <button class="btn-primary" onclick="setDashTab('referral')">Generate referral note</button>
+            </div>
+          </div>
+
+          <div class="dash-tab-panel" data-panel="referral" style="display:none;">
+            <div style="padding:16px; font-size:12.5px; color:var(--ink-muted); line-height:1.7; border-bottom:1px dashed var(--border); margin-bottom:6px;">
+              BP 152/98 · severe headache · reduced fetal movement<br>
+              <span class="mono" style="font-size:11px;">Recommended: Walewale District Hospital · 14km</span>
+            </div>
+            <div class="stepper">
+              <div class="step done"><div class="dot"></div><div><div class="label">Note queued</div><div class="sub">10:42 — saved offline</div></div></div>
+              <div class="step active"><div class="dot"></div><div><div class="label">Syncing…</div><div class="sub">waiting for signal</div></div></div>
+              <div class="step"><div class="dot"></div><div><div class="label">Sent to facility</div><div class="sub">pending</div></div></div>
+              <div class="step"><div class="dot"></div><div><div class="label">Acknowledged</div><div class="sub">pending</div></div></div>
+            </div>
+            <p class="mono" style="padding:0 16px; font-size:11px; color:var(--ink-muted);">No signal — SMS fallback armed.</p>
+          </div>
+
+          <div class="dash-tab-panel" data-panel="nutrition" style="display:none;">
+            <div style="padding:16px 16px 0;">
+              <span class="tag-status" style="margin:0 0 10px;">Mild underweight — catch-up plan</span>
+            </div>
+            <div class="food-card" style="margin-top:10px;"><div class="day">MON</div><div class="desc">TZ + groundnut soup + moringa</div></div>
+            <div class="food-card"><div class="day">TUE</div><div class="desc">Waakye + boiled egg + gari</div></div>
+            <div class="food-card"><div class="day">WED</div><div class="desc">Koose + kooko + groundnuts</div></div>
+            <div class="food-card"><div class="day">THU</div><div class="desc">TZ + ayoyo soup + dried fish</div></div>
+            <p class="mono" style="padding:12px 16px; font-size:11px; color:var(--ink-muted);">Built from foods available in Zorborgu this season.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+<script>
+  // ---- Mobile screen navigation ----
+  function setScreen(name){
+    document.querySelectorAll('.m-screen').forEach(el=>{
+      el.style.display = (el.dataset.screen === name) ? '' : 'none';
+    });
+    document.querySelectorAll('.m-screen[style=""]').forEach(el=>{
+      el.querySelectorAll('.fade-in').forEach(f=>{
+        f.style.animation = 'none';
+        void f.offsetWidth;
+        f.style.animation = '';
+      });
+    });
+    const activeScreen = document.querySelector(`.m-screen[data-screen="${name}"]`);
+    if(activeScreen){
+      activeScreen.querySelectorAll('.bottom-nav .nav-item').forEach(n=>n.classList.remove('active'));
+      const navMatch = activeScreen.querySelector(`.bottom-nav .nav-item[data-nav="${name}"]`);
+      if(navMatch) navMatch.classList.add('active');
+    }
+    maybeShowGuideTip(name);
+    if (name === 'login' && typeof prefillStaffId === 'function') prefillStaffId();
+  }
+
+  // ---- In-app walkthrough: one contextual tip per screen, first visit only ----
+  const GUIDE_TIPS = {
+    home: 'Tap a household to check on them. Colours show priority \u2014 green is routine, amber is caution, coral is urgent.',
+    register: 'Type a name to find someone already registered \u2014 opening their record also checks them in. No match? You can add them as new.',
+    'add-household': 'Just the basics for now \u2014 name, community, and who you\u2019re tracking. You can fill in the rest during their first check-up.',
+    triage: 'Tap every danger sign you observe, then tap "Check risk" to see the result and why.',
+    referral: 'This shows whether your referral has reached the facility yet \u2014 it\u2019s saved even offline, and sends automatically once you\u2019re back in range.',
+    nutrition: 'This plan updates based on the child\u2019s age and the season \u2014 foods you can actually find nearby, not a generic chart.',
+    'cg-link': 'This links your device to your record so it remembers you next time \u2014 you\u2019ll only do this once.',
+    'dno-home': 'Flagged children needing action appear at the top. Below that, a trend board, then every child sorted by priority \u2014 tap any child for their full weekly food plan.',
+    'cg-home': 'Tap an icon to get started. I can read anything aloud \u2014 just tap the speaker icon on any tip.',
+    'cg-checkup': 'Tap anything you\u2019re noticing, then tap Check. If it needs attention, I\u2019ll tell you what to do \u2014 and let your health worker know too.',
+  };
+  function maybeShowGuideTip(name){
+    const message = GUIDE_TIPS[name];
+    if(!message) return;
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem('responda_seen_tips') || '{}'); } catch(e){}
+    if(seen[name]) return;
+    const container = document.querySelector(`.m-screen[data-screen="${name}"]`);
+    if(!container) return;
+    const bar = document.createElement('div');
+    bar.className = 'guide-tip';
+    bar.innerHTML = `<span class="guide-tip-icon">\uD83D\uDC4B</span><span class="guide-tip-text">${message}</span><button class="guide-tip-close">Got it</button>`;
+    bar.querySelector('.guide-tip-close').onclick = () => bar.remove();
+    container.appendChild(bar);
+    seen[name] = true;
+    try { localStorage.setItem('responda_seen_tips', JSON.stringify(seen)); } catch(e){}
+  }
+  window.resetGuideTips = function(){
+    try { localStorage.removeItem('responda_seen_tips'); } catch(e){}
+  };
+
+  // ---- Laptop dashboard tab switching ----
+  function setDashTab(name){
+    document.querySelectorAll('.rp-tab').forEach(t=>{
+      t.classList.toggle('active', t.dataset.tab === name);
+    });
+    document.querySelectorAll('.dash-tab-panel').forEach(p=>{
+      p.style.display = (p.dataset.panel === name) ? '' : 'none';
+    });
+  }
+
+  // ---- Onboarding carousel ----
+  let obIndex = 0;
+  function obShow(i){
+    document.querySelectorAll('.ob-slide').forEach((s, idx)=>{
+      s.style.display = idx === i ? '' : 'none';
+    });
+    document.querySelectorAll('#ob-dots span').forEach((d, idx)=>{
+      d.classList.toggle('now', idx === i);
+    });
+    document.getElementById('ob-next-label').textContent = (i === 3) ? 'Continue to login' : 'Next';
+  }
+  function obNext(){
+    if(obIndex < 3){
+      obIndex++;
+      obShow(obIndex);
+    } else {
+      setScreen('login');
+    }
+  }
+  function obReset(){
+    obIndex = 0;
+    obShow(0);
+  }
+
+  // ---- Login: role-appropriate credentials ----
+  // Health Worker / Nutrition Officer: Staff ID + Facility — no separate PIN
+  // to forget, since GHS already issues Staff IDs. Facility ties every
+  // household/referral this device creates to a specific CHPS compound.
+  // Both remembered locally so a return visit is one tap, not re-typed.
+  // Caregiver: no credential at all — this is a personal device, and the
+  // household-linking step that follows already answers "who is this."
+  var nutritionReturnScreen = 'home';
+  let loginRole = 'worker';
+  const STAFF_ID_KEY = 'responda_staff_id';
+  const FACILITY_KEY = 'responda_facility_name';
+  const REGION_KEY = 'responda_region';
+
+  function setRole(role, btn){
+    loginRole = role;
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const isStaff = role === 'worker' || role === 'nutrition-officer';
+    const staffFields = document.getElementById('login-staff-fields');
+    const facilityFields = document.getElementById('login-facility-fields');
+    const regionFields = document.getElementById('login-region-fields');
+    const cgNote = document.getElementById('login-caregiver-note');
+    if (staffFields) staffFields.style.display = isStaff ? '' : 'none';
+    if (facilityFields) facilityFields.style.display = isStaff ? '' : 'none';
+    if (regionFields) regionFields.style.display = isStaff ? '' : 'none';
+    if (cgNote) cgNote.style.display = isStaff ? 'none' : '';
+    hideLoginError();
+    updateContinueButtonLabel();
+  }
+
+  function updateContinueButtonLabel(){
+    const btn = document.getElementById('login-continue-btn');
+    if (!btn) return;
+    const idInput = document.getElementById('login-staff-id');
+    const isStaff = loginRole === 'worker' || loginRole === 'nutrition-officer';
+    if (isStaff && idInput && idInput.value.trim()) {
+      btn.textContent = 'Continue as ' + idInput.value.trim();
+    } else {
+      btn.textContent = 'Continue';
+    }
+  }
+
+  function prefillStaffId(){
+    let savedId = null, savedFacility = null, savedRegion = null;
+    try {
+      savedId = localStorage.getItem(STAFF_ID_KEY);
+      savedFacility = localStorage.getItem(FACILITY_KEY);
+      savedRegion = localStorage.getItem(REGION_KEY);
+    } catch(e){}
+    const idInput = document.getElementById('login-staff-id');
+    const facilityInput = document.getElementById('login-facility');
+    const regionInput = document.getElementById('login-region');
+    if (savedId && idInput && !idInput.value) idInput.value = savedId;
+    if (savedFacility && facilityInput && !facilityInput.value) facilityInput.value = savedFacility;
+    if (savedRegion && regionInput && !regionInput.value) regionInput.value = savedRegion;
+    updateContinueButtonLabel();
+  }
+
+  function showLoginError(message){
+    const banner = document.getElementById('login-error-banner');
+    if (!banner) return;
+    banner.textContent = message;
+    banner.style.display = 'block';
+  }
+  function hideLoginError(){
+    const banner = document.getElementById('login-error-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function completeLogin(){
+    hideLoginError();
+    const isStaff = loginRole === 'worker' || loginRole === 'nutrition-officer';
+    if (isStaff) {
+      const idInput = document.getElementById('login-staff-id');
+      const idError = document.getElementById('login-staff-id-error');
+      const facilityInput = document.getElementById('login-facility');
+      const facilityError = document.getElementById('login-facility-error');
+      const regionInput = document.getElementById('login-region');
+      const regionError = document.getElementById('login-region-error');
+      const idVal = idInput.value.trim();
+      const facilityVal = facilityInput.value.trim();
+      const regionVal = regionInput.value;
+      let valid = true;
+      if (!idVal) { idInput.classList.add('error'); idError.classList.add('show'); valid = false; }
+      else { idInput.classList.remove('error'); idError.classList.remove('show'); }
+      if (!facilityVal) { facilityInput.classList.add('error'); facilityError.classList.add('show'); valid = false; }
+      else { facilityInput.classList.remove('error'); facilityError.classList.remove('show'); }
+      if (!regionVal) { regionInput.classList.add('error'); regionError.classList.add('show'); valid = false; }
+      else { regionInput.classList.remove('error'); regionError.classList.remove('show'); }
+      if (!valid) return;
+      try {
+        localStorage.setItem(STAFF_ID_KEY, idVal);
+        localStorage.setItem(FACILITY_KEY, facilityVal);
+        localStorage.setItem(REGION_KEY, regionVal);
+      } catch(e){}
+    }
+    const dest = loginRole === 'worker' ? 'home' : loginRole === 'nutrition-officer' ? 'dno-home' : 'cg-home';
+    setScreen(dest);
+    if (window.onLoginComplete) window.onLoginComplete(loginRole);
+  }
+
+  // Quick path from the worker Home screen's "Caregiver view" link — routes
+  // through the real login + household-linking flow instead of jumping
+  // straight into caregiver screens with no linked record (that silent
+  // bypass was the actual cause of check-up/reminders "not working").
+  function goToCaregiverLogin(){
+    setScreen('login');
+    const cgBtn = document.querySelector('.role-btn[data-role="caregiver"]');
+    if (cgBtn) setRole('caregiver', cgBtn);
+  }
+</script>
+
+<script type="module">
+/* ================================================================
+   RESPONDA — DATA LAYER + ENGINE (single-file production build)
+   ================================================================
+   This block does three things:
+   1. Defines the same tested risk/nutrition engine as a set of pure
+      functions (identical logic to src/engine/*.js — copied in, not
+      reinvented, so the 15 passing tests still describe this code).
+   2. Connects to Firebase IF you've filled in FIREBASE_CONFIG below.
+      If you haven't yet, it automatically falls back to an in-memory
+      local data layer with the same method names — so this file is
+      fully demoable the moment you open it, before any Firebase
+      project even exists. Fill in the config and reload; nothing
+      else in this file needs to change.
+   3. Wires the screens (Home, Triage, Referral, Nutrition, Caregiver
+      self-check) to that data layer.
+   ================================================================ */
+
+// ---- STEP 1: paste your Firebase project config here ----
+// Firebase Console -> Project settings -> General -> Your apps -> SDK setup
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAD66jPF3k9RduWPyg1SLFfnUrshy9Pi5o",
+  authDomain: "responda-b0db7.firebaseapp.com",
+  projectId: "responda-b0db7",
+  storageBucket: "responda-b0db7.firebasestorage.app",
+  messagingSenderId: "837355189560",
+  appId: "1:837355189560:web:11c75c973d9c5c07767dcd",
+};
+const USE_FIREBASE = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('YOUR_');
+
+/* ---------------------------------------------------------------
+   RISK ENGINE (mirrors src/engine/riskEngine.js + rules/*.js)
+   --------------------------------------------------------------- */
+const PREGNANCY_SIGNS = {
+  critical: [
+    { id: 'vaginal_bleeding', label: 'Vaginal bleeding' },
+    { id: 'convulsions', label: 'Convulsions / fits' },
+    { id: 'severe_headache_vision', label: 'Severe headache with blurred vision' },
+    { id: 'severe_abdominal_pain', label: 'Severe abdominal pain' },
+    { id: 'reduced_fetal_movement', label: 'Reduced or absent fetal movement' },
+    { id: 'high_fever', label: 'High fever (38.5°C or above)' },
+    { id: 'preterm_labor_signs', label: 'Labour signs before 37 weeks, or waters broken' },
+  ],
+  moderate: [
+    { id: 'elevated_bp', label: 'Blood pressure 140/90 or higher' },
+    { id: 'facial_hand_swelling', label: 'Swelling of face or hands' },
+    { id: 'severe_vomiting', label: 'Severe vomiting, unable to keep fluids down' },
+    { id: 'pallor', label: 'Pale skin / signs of anaemia' },
+    { id: 'mild_headache', label: 'Headache without visual changes' },
+    // Anaemia-specific cluster — Upper West's maternal anaemia rate (44.2%)
+    // was previously covered by a single "pallor" checkbox. These give it
+    // real weight: any two together (very common anaemia presentation)
+    // escalate to urgent under the same rule that already handles the
+    // pre-eclampsia pattern (elevated_bp + headache).
+    { id: 'fatigue_weakness', label: 'Unusual tiredness or weakness' },
+    { id: 'dizziness', label: 'Dizziness or feeling faint' },
+    { id: 'shortness_of_breath', label: 'Shortness of breath with light activity' },
+  ],
+};
+
+const CHILD_GENERAL_DANGER_SIGNS = [
+  { id: 'not_drinking', label: 'Not able to drink or breastfeed at all' },
+  { id: 'vomits_everything', label: 'Vomits everything' },
+  { id: 'convulsions', label: 'Convulsions (now, or during this illness)' },
+  { id: 'lethargic_unconscious', label: 'Unusually sleepy, or hard to wake' },
+];
+const CHILD_CRITICAL_SIGNS = [
+  { id: 'chest_indrawing', label: 'Chest pulls in when breathing' },
+  { id: 'sunken_eyes_no_drink', label: 'Sunken eyes and unable to drink (dehydration)' },
+  { id: 'visible_severe_wasting', label: 'Visible severe wasting, or swelling of both feet' },
+  { id: 'fever_under_2mo', label: 'Any fever in a baby under 2 months old' },
+];
+// Newborn/birth signs — shown only for infants under 1 month old (see
+// renderTriageSigns / renderCaregiverSigns). Asked retrospectively at a
+// newborn's first check-up. Directly targets birth asphyxia, named in the
+// brief as a leading driver of Upper East's neonatal mortality — the
+// general IMCI sign set above was never built to catch this on its own.
+const NEWBORN_CRITICAL_SIGNS = [
+  { id: 'birth_no_cry', label: 'Did not cry or breathe right after birth' },
+  { id: 'birth_floppy', label: 'Was limp or floppy at birth' },
+  { id: 'birth_resuscitation', label: 'Needed help or stimulation to start breathing at birth' },
+];
+const CHILD_MODERATE_SIGNS = [
+  { id: 'fast_breathing', label: 'Breathing faster than normal for age' },
+  { id: 'fever', label: 'Fever (38.5°C or above), age 2 months or older' },
+  { id: 'reduced_feeding', label: 'Feeding less than usual' },
+  { id: 'diarrhea_no_dehydration', label: 'Diarrhoea without dehydration signs' },
+];
+
+function assessPregnancy(selectedSignIds = [], vitals = {}) {
+  const reasons = [];
+  const criticalHit = PREGNANCY_SIGNS.critical.filter((s) => selectedSignIds.includes(s.id));
+  const moderateHit = PREGNANCY_SIGNS.moderate.filter((s) => selectedSignIds.includes(s.id));
+  const bpElevated = vitals.systolicBp >= 140 || vitals.diastolicBp >= 90;
+  if (bpElevated && !moderateHit.some((s) => s.id === 'elevated_bp')) {
+    moderateHit.push(PREGNANCY_SIGNS.moderate.find((s) => s.id === 'elevated_bp'));
+  }
+  criticalHit.forEach((s) => reasons.push(s.label));
+  moderateHit.forEach((s) => reasons.push(s.label));
+  let level = 'routine';
+  if (criticalHit.length > 0) level = 'urgent';
+  else if (moderateHit.length >= 2) level = 'urgent';
+  else if (moderateHit.length === 1) level = 'caution';
+  return { level, reasons, signCount: reasons.length };
+}
+
+function assessChild({ ageMonths, selectedSignIds = [], vitals = {} }) {
+  const reasons = [];
+  const generalHit = CHILD_GENERAL_DANGER_SIGNS.filter((s) => selectedSignIds.includes(s.id));
+  const criticalHit = CHILD_CRITICAL_SIGNS.filter((s) => selectedSignIds.includes(s.id));
+  const newbornHit = ageMonths < 1 ? NEWBORN_CRITICAL_SIGNS.filter((s) => selectedSignIds.includes(s.id)) : [];
+  const moderateHit = [...CHILD_MODERATE_SIGNS.filter((s) => selectedSignIds.includes(s.id))];
+  generalHit.forEach((s) => reasons.push(s.label));
+  criticalHit.forEach((s) => reasons.push(s.label));
+  newbornHit.forEach((s) => reasons.push(s.label));
+  moderateHit.forEach((s) => reasons.push(s.label));
+  let level = 'routine';
+  if (generalHit.length > 0 || criticalHit.length > 0 || newbornHit.length > 0) level = 'urgent';
+  else if (moderateHit.length >= 2) level = 'urgent';
+  else if (moderateHit.length === 1) level = 'caution';
+  return { level, reasons, signCount: reasons.length };
+}
+
+/* ---------------------------------------------------------------
+   NUTRITION ENGINE (mirrors src/engine/nutritionEngine.js)
+   --------------------------------------------------------------- */
+const BASE_WEEKLY_PLANS = [
+  { ageBand:'6-8', season:'rainy', tip:'Start with small, soft, mashed portions 2-3 times a day, alongside continued breastfeeding.',
+    weeklyPlan:[{day:'Mon',desc:'Mashed TZ + groundnut soup + mashed moringa leaves'},{day:'Tue',desc:'Mashed waakye + mashed boiled egg yolk'},{day:'Wed',desc:'Soft koose mashed with kooko'},{day:'Thu',desc:'Mashed TZ + ayoyo soup (strained) + dried fish'},{day:'Fri',desc:'Mashed beans + gari softened in soup'},{day:'Sat',desc:'Soft banku + strained light soup'},{day:'Sun',desc:'Mashed rice + groundnut soup + orange juice'}] },
+  { ageBand:'6-8', season:'dry', tip:'Start with small, soft, mashed portions 2-3 times a day. Leafy greens are scarcer now — use dried/stored moringa powder if fresh is unavailable.',
+    weeklyPlan:[{day:'Mon',desc:'Mashed TZ + groundnut soup + moringa powder'},{day:'Tue',desc:'Mashed kooko + groundnut paste'},{day:'Wed',desc:'Soft koose mashed with kooko'},{day:'Thu',desc:'Mashed TZ + dried fish soup'},{day:'Fri',desc:'Mashed beans + gari softened in soup'},{day:'Sat',desc:'Soft banku + strained groundnut soup'},{day:'Sun',desc:'Mashed rice + groundnut soup'}] },
+  { ageBand:'9-11', season:'rainy', tip:'Thicker textures and small finger foods now, 3 meals plus 1-2 snacks a day.',
+    weeklyPlan:[{day:'Mon',desc:'TZ + groundnut soup + chopped moringa leaves'},{day:'Tue',desc:'Waakye + boiled egg pieces + gari'},{day:'Wed',desc:'Koose + kooko, groundnuts as a snack'},{day:'Thu',desc:'TZ + ayoyo soup + flaked dried fish'},{day:'Fri',desc:'Beans + gari + palm oil'},{day:'Sat',desc:'Banku + light soup + flaked fish'},{day:'Sun',desc:'Rice + groundnut soup + orange pieces'}] },
+  { ageBand:'9-11', season:'dry', tip:'Thicker textures, 3 meals plus 1-2 snacks a day. Rely more on stored grains and groundnuts while greens are scarce.',
+    weeklyPlan:[{day:'Mon',desc:'TZ + groundnut soup + moringa powder'},{day:'Tue',desc:'Waakye + boiled egg + gari'},{day:'Wed',desc:'Koose + kooko + groundnuts'},{day:'Thu',desc:'TZ + dried fish soup'},{day:'Fri',desc:'Beans + gari + palm oil'},{day:'Sat',desc:'Banku + groundnut soup + flaked fish'},{day:'Sun',desc:'Rice + groundnut soup'}] },
+  { ageBand:'12-23', season:'rainy', tip:'Family foods now, cut small, 3 meals plus 2 snacks a day.',
+    weeklyPlan:[{day:'Mon',desc:'TZ + groundnut soup + moringa leaves'},{day:'Tue',desc:'Waakye + boiled egg + gari'},{day:'Wed',desc:'Koose + kooko, mid-morning groundnuts'},{day:'Thu',desc:'TZ + ayoyo soup + dried fish'},{day:'Fri',desc:'Beans + gari + palm oil'},{day:'Sat',desc:'Banku + light soup + fish'},{day:'Sun',desc:'Rice + groundnut soup + orange'}] },
+  { ageBand:'12-23', season:'dry', tip:'Family foods now, 3 meals plus 2 snacks. Add a spoon of groundnut paste or oil to meals for extra energy in the lean season.',
+    weeklyPlan:[{day:'Mon',desc:'TZ + groundnut soup + moringa powder'},{day:'Tue',desc:'Waakye + boiled egg + gari + groundnut paste'},{day:'Wed',desc:'Koose + kooko + groundnuts'},{day:'Thu',desc:'TZ + dried fish soup'},{day:'Fri',desc:'Beans + gari + palm oil'},{day:'Sat',desc:'Banku + groundnut soup + fish'},{day:'Sun',desc:'Rice + groundnut soup'}] },
+  { ageBand:'24-59', season:'rainy', tip:'Full family meals, 3 meals plus 2 snacks a day, encourage self-feeding.',
+    weeklyPlan:[{day:'Mon',desc:'TZ + groundnut soup + moringa leaves + fruit'},{day:'Tue',desc:'Waakye + egg + gari + vegetables'},{day:'Wed',desc:'Koose + kooko + groundnuts'},{day:'Thu',desc:'TZ + ayoyo soup + dried fish'},{day:'Fri',desc:'Beans + gari + palm oil + fruit'},{day:'Sat',desc:'Banku + light soup + fish'},{day:'Sun',desc:'Rice + groundnut soup + orange'}] },
+  { ageBand:'24-59', season:'dry', tip:'Full family meals, 3 meals plus 2 snacks. Stretch stored grains and add groundnut paste/oil for extra energy.',
+    weeklyPlan:[{day:'Mon',desc:'TZ + groundnut soup + moringa powder'},{day:'Tue',desc:'Waakye + egg + gari + groundnut paste'},{day:'Wed',desc:'Koose + kooko + groundnuts'},{day:'Thu',desc:'TZ + dried fish soup'},{day:'Fri',desc:'Beans + gari + palm oil'},{day:'Sat',desc:'Banku + groundnut soup + fish'},{day:'Sun',desc:'Rice + groundnut soup'}] },
+];
+const GROWTH_MODIFIERS = {
+  normal: { mealsPerDay:3, extraNote:'' },
+  mild_underweight: { mealsPerDay:4, extraNote:'Add one extra small meal or snack daily, and stir in a spoon of groundnut paste or oil to raise energy.' },
+  moderate_underweight: { mealsPerDay:5, extraNote:'Increase to 5 small, energy-dense meals daily. Re-check weight in 2 weeks — refer if there is no improvement.' },
+};
+function pickAgeBand(ageMonths){
+  if (ageMonths <= 8) return '6-8';
+  if (ageMonths <= 11) return '9-11';
+  if (ageMonths <= 23) return '12-23';
+  return '24-59';
+}
+function getNutritionPlan({ ageMonths, growthStatus = 'normal', season = 'rainy' }) {
+  if (growthStatus === 'severe_wasting') {
+    return { needsReferral:true, message:'Signs of severe acute malnutrition need facility-based treatment (e.g. therapeutic feeding), not a home diet plan alone. Refer today.' };
+  }
+  if (ageMonths < 6) {
+    return { needsReferral:false, ageBand:'under6', weeklyPlan:[], tip:'Exclusive breastfeeding is recommended up to 6 months — no water, porridge, or solid food needed yet.' };
+  }
+  const ageBand = pickAgeBand(ageMonths);
+  const base = BASE_WEEKLY_PLANS.find((p) => p.ageBand === ageBand && p.season === season);
+  if (!base) {
+    return { needsReferral:false, ageBand, season, weeklyPlan:[], tip:'Offer a variety of foods across food groups each day where possible.' };
+  }
+  const modifier = GROWTH_MODIFIERS[growthStatus] || GROWTH_MODIFIERS.normal;
+  return { needsReferral:false, ageBand, season, growthStatus, weeklyPlan: base.weeklyPlan, mealsPerDay: modifier.mealsPerDay, tip: [base.tip, modifier.extraNote].filter(Boolean).join(' ') };
+}
+
+/* ---------------------------------------------------------------
+   IMMUNIZATION SCHEDULE (Ghana EPI-aligned, summary level)
+   ---------------------------------------------------------------
+   dueMonths approximates the standard week-based schedule in months,
+   since this MVP stores a child's age in months rather than exact date
+   of birth. Before real deployment this should be rebuilt on precise
+   DOB and verified against the current Ghana Health Service EPI
+   schedule — treat these figures as demo-representative, not clinical.
+   --------------------------------------------------------------- */
+const IMMUNIZATION_SCHEDULE = [
+  { id: 'bcg_opv0', label: 'BCG + OPV 0', dueMonths: 0 },
+  { id: 'penta1_set', label: 'Penta 1 + OPV1 + PCV1 + Rota1', dueMonths: 1.4 },
+  { id: 'penta2_set', label: 'Penta 2 + OPV2 + PCV2 + Rota2', dueMonths: 2.3 },
+  { id: 'penta3_set', label: 'Penta 3 + OPV3 + PCV3 + Rota3 + IPV', dueMonths: 3.2 },
+  { id: 'vitA1', label: 'Vitamin A (1st dose)', dueMonths: 6 },
+  { id: 'mr1_yf_vitA', label: 'Measles-Rubella 1 + Yellow Fever + Vitamin A', dueMonths: 9 },
+  { id: 'mr2_mena', label: 'Measles-Rubella 2 + Meningitis A', dueMonths: 18 },
+];
+
+/* ---------------------------------------------------------------
+   DEMO SEED DATA — same households as the design mockup
+   --------------------------------------------------------------- */
+const DAY_MS = 86400000;
+const DEMO_HOUSEHOLDS = [
+  { headName:'Fati Mahama', community:'Zorborgu', region:'Northern', distanceFromFacility:1.4, memberName:'Fati Mahama', memberType:'pregnant', gestationWeeks:32, currentRiskLevel:'routine', visitCount:3, lastVisitAt: Date.now() - 2*DAY_MS, immunizations:{}, lastCaregiverReport:null },
+  { headName:"Abdul-Rahim's household", community:'Zorborgu', region:'Northern', distanceFromFacility:3.1, memberName:"Abdul-Rahim's child", memberType:'child', ageMonths:14, growthStatus:'mild_underweight', season:'dry', currentRiskLevel:'routine', visitCount:5, lastVisitAt: Date.now() - 11*DAY_MS,
+    immunizations:{ bcg_opv0:{given:true}, penta1_set:{given:true}, penta2_set:{given:true}, penta3_set:{given:true}, vitA1:{given:true}, mr1_yf_vitA:{given:false} }, lastCaregiverReport:null },
+  { headName:"Asana's household", community:'Zorborgu', region:'Northern', distanceFromFacility:0.6, memberName:"Asana's child", memberType:'child', ageMonths:8, growthStatus:'normal', season:'rainy', currentRiskLevel:'routine', visitCount:2, lastVisitAt: Date.now(),
+    immunizations:{ bcg_opv0:{given:true}, penta1_set:{given:true}, penta2_set:{given:true}, penta3_set:{given:true} }, lastCaregiverReport:null },
+];
+
+/* ---------------------------------------------------------------
+   DATA LAYER — Firebase if configured, otherwise local in-memory
+   --------------------------------------------------------------- */
+let Data;
+
+if (USE_FIREBASE) {
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js');
+  const {
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    collection, doc, addDoc, updateDoc, onSnapshot, query, where, serverTimestamp, getDocs, increment,
+  } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+  const { getAuth, signInAnonymously, onAuthStateChanged } =
+    await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js');
+
+  const fbApp = initializeApp(FIREBASE_CONFIG);
+  const db = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  const auth = getAuth(fbApp);
+
+  // A silent hang here (auth never resolving) was the actual root cause
+  // behind "registration got stuck" and "preloaded household refused to
+  // load" — if Anonymous auth isn't enabled in Firebase Console,
+  // signInAnonymously fails, onAuthStateChanged never fires with a user,
+  // and every `await authReady` call below waited forever with no error.
+  // This timeout + explicit rejection makes that failure visible instead.
+  const authReady = new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Sign-in timed out. In Firebase Console, check Authentication \u2192 Sign-in method \u2192 Anonymous is enabled, and that you have a network connection.'));
+    }, 10000);
+    onAuthStateChanged(auth, (user) => {
+      if (user) { clearTimeout(timeoutId); resolve(user.uid); }
+    });
+    signInAnonymously(auth).catch((e) => {
+      clearTimeout(timeoutId);
+      reject(new Error('Sign-in failed (' + (e && e.code ? e.code : 'unknown error') + '). Check that Anonymous authentication is enabled in Firebase Console.'));
+    });
+  });
+  authReady.catch(() => {}); // prevent an unhandled-rejection warning if nothing has awaited yet
+
+  Data = {
+    mode: 'firebase',
+    // Households are scoped by FACILITY now, not by individual device/uid —
+    // a worker's uid and a nutrition officer's uid are always different
+    // random values, so uid-scoping meant no one could ever see records
+    // created on a different device. Facility scoping is what CHPS records
+    // should share in the first place.
+    async seedIfEmpty(facilityName) {
+      if (!facilityName) return;
+      const uid = await authReady;
+      const q = query(collection(db, 'households'), where('facilityName', '==', facilityName));
+      const snap = await getDocs(q);
+      if (!snap.empty) return;
+      for (const h of DEMO_HOUSEHOLDS) {
+        await addDoc(collection(db, 'households'), {
+          ...h, facilityName, assignedWorkerId: uid, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        });
+      }
+    },
+    subscribeHouseholds(facilityName, cb) {
+      authReady.then(() => {
+        const q = facilityName
+          ? query(collection(db, 'households'), where('facilityName', '==', facilityName))
+          : collection(db, 'households');
+        onSnapshot(
+          q,
+          (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+          (err) => showAppError('Could not load households: ' + err.message)
+        );
+      }).catch((err) => showAppError(err.message));
+    },
+    async saveRiskAssessment(data) {
+      const uid = await authReady;
+      const ref = await addDoc(collection(db, 'riskAssessments'), {
+        ...data, createdBy: uid, createdAtLocal: Date.now(), createdAt: serverTimestamp(),
+      });
+      return ref.id;
+    },
+    async createReferral(data) {
+      const ref = await addDoc(collection(db, 'referrals'), {
+        ...data, status: 'queued', smsFallbackSent: false, createdAtLocal: Date.now(), createdAt: serverTimestamp(),
+      });
+      return ref.id;
+    },
+    async updateMemberRisk(householdId, level) {
+      await updateDoc(doc(db, 'households', householdId), { currentRiskLevel: level, updatedAt: serverTimestamp() });
+    },
+    async createHousehold(data) {
+      const uid = await authReady;
+      const ref = await addDoc(collection(db, 'households'), {
+        ...data, assignedWorkerId: uid, currentRiskLevel: data.currentRiskLevel || 'routine',
+        visitCount: 1, lastVisitAt: serverTimestamp(),
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      });
+      return ref.id;
+    },
+    async logVisit(householdId) {
+      await updateDoc(doc(db, 'households', householdId), {
+        visitCount: increment(1), lastVisitAt: serverTimestamp(),
+      });
+    },
+    async saveCaregiverReport(householdId, report) {
+      const uid = await authReady;
+      await addDoc(collection(db, 'riskAssessments'), {
+        householdId, source: 'caregiver', createdBy: uid,
+        dangerSigns: report.selectedSignIds, riskLevel: report.level, reasons: report.reasons,
+        createdAtLocal: Date.now(), createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, 'households', householdId), {
+        lastCaregiverReport: { level: report.level, reasons: report.reasons, reportedAt: Date.now(), acknowledged: false },
+        updatedAt: serverTimestamp(),
+      });
+    },
+    async acknowledgeCaregiverReport(householdId) {
+      await updateDoc(doc(db, 'households', householdId), { 'lastCaregiverReport.acknowledged': true });
+    },
+    async updateImmunization(householdId, vaccineId, given) {
+      await updateDoc(doc(db, 'households', householdId), {
+        [`immunizations.${vaccineId}`]: { given, givenAt: given ? serverTimestamp() : null },
+        updatedAt: serverTimestamp(),
+      });
+    },
+    subscribeHousehold(householdId, cb) {
+      onSnapshot(
+        doc(db, 'households', householdId),
+        (snap) => { if (snap.exists()) cb({ id: snap.id, ...snap.data() }); },
+        (err) => showAppError('Could not load this record: ' + err.message)
+      );
+    },
+    subscribeReferral(referralId, cb) {
+      const ref = doc(db, 'referrals', referralId);
+      onSnapshot(ref, { includeMetadataChanges: true }, (snap) => {
+        if (!snap.exists()) return;
+        cb({ id: snap.id, ...snap.data(), syncState: snap.metadata.hasPendingWrites ? 'queued' : 'synced' });
+      });
+    },
+  };
+} else {
+  console.info('[Responda] No Firebase config yet — running in local demo mode. Fill in FIREBASE_CONFIG near the top of this file to connect a real project.');
+  Data = buildLocalDataLayer();
+}
+
+function buildLocalDataLayer() {
+  const store = { households: [], referrals: {} };
+  const householdListeners = [];
+  let seeded = false;
+  function notifyHouseholds() { householdListeners.forEach((cb) => cb(store.households.map((h) => ({ ...h }))) ); }
+  return {
+    mode: 'local',
+    async seedIfEmpty(facilityName) {
+      if (seeded || !facilityName) return;
+      seeded = true;
+      store.households = DEMO_HOUSEHOLDS.map((h, i) => ({ id: 'demo-' + i, ...h, facilityName }));
+      notifyHouseholds();
+    },
+    subscribeHouseholds(facilityName, cb) {
+      const push = () => {
+        const filtered = facilityName
+          ? store.households.filter((h) => h.facilityName === facilityName)
+          : store.households;
+        cb(filtered.map((h) => ({ ...h })));
+      };
+      householdListeners.push(push);
+      push();
+    },
+    async saveRiskAssessment(data) {
+      return 'local-assessment-' + Date.now();
+    },
+    async createReferral(data) {
+      const id = 'local-referral-' + Date.now();
+      store.referrals[id] = { id, ...data, status: 'queued', syncState: 'queued', createdAtLocal: Date.now() };
+      return id;
+    },
+    async updateMemberRisk(householdId, level) {
+      const h = store.households.find((x) => x.id === householdId);
+      if (h) h.currentRiskLevel = level;
+      notifyHouseholds();
+    },
+    async createHousehold(data) {
+      const id = 'local-hh-' + Date.now();
+      store.households.push({
+        id, ...data, currentRiskLevel: data.currentRiskLevel || 'routine',
+        visitCount: 1, lastVisitAt: Date.now(),
+        immunizations: data.immunizations || {}, lastCaregiverReport: null,
+      });
+      notifyHouseholds();
+      return id;
+    },
+    async logVisit(householdId) {
+      const h = store.households.find((x) => x.id === householdId);
+      if (h) { h.visitCount = (h.visitCount || 0) + 1; h.lastVisitAt = Date.now(); }
+      notifyHouseholds();
+    },
+    async saveCaregiverReport(householdId, report) {
+      const h = store.households.find((x) => x.id === householdId);
+      if (!h) return;
+      h.lastCaregiverReport = { level: report.level, reasons: report.reasons, reportedAt: Date.now(), acknowledged: false };
+      notifyHouseholds();
+    },
+    async acknowledgeCaregiverReport(householdId) {
+      const h = store.households.find((x) => x.id === householdId);
+      if (h && h.lastCaregiverReport) h.lastCaregiverReport.acknowledged = true;
+      notifyHouseholds();
+    },
+    async updateImmunization(householdId, vaccineId, given) {
+      const h = store.households.find((x) => x.id === householdId);
+      if (!h) return;
+      if (!h.immunizations) h.immunizations = {};
+      h.immunizations[vaccineId] = { given, givenAt: given ? Date.now() : null };
+      notifyHouseholds();
+    },
+    subscribeHousehold(householdId, cb) {
+      const push = () => {
+        const h = store.households.find((x) => x.id === householdId);
+        if (h) cb({ ...h });
+      };
+      householdListeners.push(push);
+      push();
+    },
+    subscribeReferral(referralId, cb) {
+      const ref = store.referrals[referralId];
+      if (!ref) return;
+      cb(ref);
+      // Simulate the real offline->online sync sequence so the stepper
+      // behaves the same way it will against real Firestore.
+      setTimeout(() => { ref.syncState = 'synced'; cb({ ...ref }); }, 2200);
+      setTimeout(() => { ref.status = 'acknowledged'; cb({ ...ref }); }, 5500);
+    },
+  };
+}
+
+/* ---------------------------------------------------------------
+   APP WIRING
+   --------------------------------------------------------------- */
+let allHouseholds = [];
+let currentHousehold = null;
+let currentTriageResult = null;
+let triageSelectedSigns = new Set();
+
+function pulseClass(level){ return level === 'urgent' ? 'urgent' : level === 'caution' ? 'caution' : 'routine'; }
+function initials(name){ return (name || '').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase(); }
+
+// Every Data.* call the UI triggers routes failures here instead of letting
+// them fail silently — this is the direct fix for "registration got stuck
+// without registering": before, a rejected promise with no .catch() just
+// did nothing visible. Now the person sees exactly what went wrong.
+function showAppError(message) {
+  console.error('[Responda]', message);
+  const existing = document.querySelector('.app-error-toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'app-error-toast';
+  el.innerHTML = `<span></span><button>Dismiss</button>`;
+  el.querySelector('span').textContent = message;
+  el.querySelector('button').onclick = () => el.remove();
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.appendChild(el);
+}
+
+function renderHouseholds(households) {
+  allHouseholds = households;
+  const list = document.getElementById('household-list');
+  const count = document.getElementById('household-count');
+  renderCaregiverReports(households);
+  renderNutritionOfficerHome(households);
+  if (!list || !count) return;
+  if (!households.length) {
+    list.innerHTML = '<p class="muted" style="padding:0 16px;">No households yet.</p>';
+    count.textContent = 'Priority today · 0 households';
+    return;
+  }
+  count.textContent = `Priority today · ${households.length} household${households.length === 1 ? '' : 's'}`;
+  // Actually prioritize: urgent first, then caution, then routine. Ties
+  // broken by most recent visit last (so a household nobody's checked on
+  // in a while doesn't get buried under one just seen today).
+  const RISK_ORDER = { urgent: 0, caution: 1, routine: 2 };
+  const sorted = [...households].sort((a, b) => {
+    const riskDiff = (RISK_ORDER[a.currentRiskLevel || 'routine'] ?? 2) - (RISK_ORDER[b.currentRiskLevel || 'routine'] ?? 2);
+    if (riskDiff !== 0) return riskDiff;
+    return (a.lastVisitAt || 0) - (b.lastVisitAt || 0);
+  });
+  list.innerHTML = sorted.map((h) => {
+    const level = h.currentRiskLevel || 'routine';
+    const metaText = h.memberType === 'pregnant'
+      ? `Pregnant · ${h.gestationWeeks ?? '—'} wks · <span class="mono">${h.distanceFromFacility ?? '—'}km away</span>`
+      : `Child · ${h.ageMonths ?? '—'} mo · <span class="mono">${h.community || ''}</span>`;
+    return `
+      <div class="card fade-in" onclick="openHousehold('${h.id}')">
+        <span class="pulse ${pulseClass(level)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+        <div class="info">
+          <div class="name">${h.headName}</div>
+          <div class="meta">${metaText}</div>
+          <span class="visit-tag">${formatRelative(h.lastVisitAt)}</span>
+        </div>
+        <span class="chip ${pulseClass(level)}">${level.toUpperCase()}</span>
+      </div>`;
+  }).join('');
+}
+
+// Surfaces any household with an unacknowledged caregiver-submitted report —
+// this is the notification loop: caregiver reports a danger sign at home,
+// worker sees it here the moment it syncs, without the caregiver needing to
+// reach the compound in person first.
+function renderCaregiverReports(households) {
+  const section = document.getElementById('caregiver-reports-section');
+  const list = document.getElementById('caregiver-reports-list');
+  if (!section || !list) return;
+  const reported = households.filter((h) => h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged);
+  if (!reported.length) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  section.style.display = '';
+  list.innerHTML = reported.map((h) => {
+    const r = h.lastCaregiverReport;
+    return `
+      <div class="card fade-in" style="border-left:4px solid var(--coral);" onclick="acknowledgeCaregiverReportAndOpen('${h.id}')">
+        <span class="pulse ${pulseClass(r.level)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+        <div class="info">
+          <div class="name">${h.headName}</div>
+          <div class="meta">Reported by caregiver: ${r.reasons.join(', ')}</div>
+        </div>
+        <span class="chip ${pulseClass(r.level)}">${r.level.toUpperCase()}</span>
+      </div>`;
+  }).join('');
+}
+
+function acknowledgeCaregiverReportAndOpen(householdId) {
+  Data.acknowledgeCaregiverReport(householdId);
+  openHousehold(householdId);
+}
+
+// Growth status is ordered worst-first so the officer sees who needs
+// attention without having to sort or search for it.
+const GROWTH_PRIORITY = { severe_wasting: 0, moderate_underweight: 1, mild_underweight: 2, normal: 3 };
+function growthPulseClass(status) {
+  if (status === 'severe_wasting') return 'urgent';
+  if (status === 'moderate_underweight' || status === 'mild_underweight') return 'caution';
+  return 'routine';
+}
+function growthLabel(status) {
+  if (!status || status === 'normal') return 'Growth on track';
+  return status.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Surfaces children needing the Nutrition Officer's attention: either a
+// caregiver reported a danger sign that hasn't been acted on yet, or the
+// child's growth status itself is a nutrition emergency (severe wasting).
+// Acknowledging here clears the same flag the worker's Home screen shows —
+// whichever responsible person acts on it first, it's handled.
+function renderFlaggedChildren(children) {
+  const section = document.getElementById('dno-flagged-section');
+  const list = document.getElementById('dno-flagged-list');
+  if (!section || !list) return;
+  const flagged = children.filter((h) =>
+    (h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged) || h.growthStatus === 'severe_wasting'
+  );
+  if (!flagged.length) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  section.style.display = '';
+  list.innerHTML = flagged.map((h) => {
+    const hasReport = h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged;
+    const reasonText = hasReport
+      ? 'Caregiver reported: ' + h.lastCaregiverReport.reasons.join(', ')
+      : 'Severe wasting \u2014 needs facility referral';
+    const level = hasReport ? h.lastCaregiverReport.level : 'urgent';
+    return `
+      <div class="card fade-in" style="border-left:4px solid var(--coral);" onclick="acknowledgeChildFlagAndOpen('${h.id}')">
+        <span class="pulse ${pulseClass(level)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+        <div class="info">
+          <div class="name">${h.memberName}</div>
+          <div class="meta">${reasonText}</div>
+        </div>
+        <span class="chip ${pulseClass(level)}">${level.toUpperCase()}</span>
+      </div>`;
+  }).join('');
+}
+
+function acknowledgeChildFlagAndOpen(householdId) {
+  const h = allHouseholds.find((x) => x.id === householdId);
+  if (h && h.lastCaregiverReport && !h.lastCaregiverReport.acknowledged) {
+    Data.acknowledgeCaregiverReport(householdId).catch((err) => {
+      showAppError('Could not clear this flag: ' + (err && err.message ? err.message : err));
+    });
+  }
+  openNutritionFromDNO(householdId);
+}
+
+// Trend board: a real growth-status distribution (computed live, not
+// fabricated) plus a genuine 7-day visit-activity trend built from actual
+// household.lastVisitAt timestamps. A full historical day-by-day flag
+// trend would need a dedicated aggregation collection — noted as a next
+// step rather than faked here.
+function renderNutritionTrends(children) {
+  const box = document.getElementById('dno-trends');
+  if (!box) return;
+  if (!children.length) { box.innerHTML = ''; return; }
+
+  const counts = { normal: 0, mild_underweight: 0, moderate_underweight: 0, severe_wasting: 0 };
+  children.forEach((h) => { const s = h.growthStatus || 'normal'; if (counts[s] !== undefined) counts[s]++; });
+  const total = children.length;
+  const colorFor = { normal: 'var(--emerald)', mild_underweight: 'var(--amber)', moderate_underweight: 'var(--amber)', severe_wasting: 'var(--coral)' };
+  const labelFor = { normal: 'On track', mild_underweight: 'Mild underweight', moderate_underweight: 'Moderate underweight', severe_wasting: 'Severe wasting' };
+
+  const distributionRows = ['normal', 'mild_underweight', 'moderate_underweight', 'severe_wasting'].map((key) => {
+    const pct = total ? Math.round((counts[key] / total) * 100) : 0;
+    return `
+      <div class="trend-row">
+        <span class="trend-label">${labelFor[key]}</span>
+        <div class="trend-bar-track"><div class="trend-bar-fill" style="width:${pct}%; background:${colorFor[key]};"></div></div>
+        <span class="trend-count">${counts[key]}</span>
+      </div>`;
+  }).join('');
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    days.push({ label: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()], start: dayStart });
+  }
+  const visitCounts = days.map((d) => {
+    const dayEnd = d.start + 86400000;
+    return children.filter((h) => {
+      const raw = h.lastVisitAt;
+      const t = raw && typeof raw.toMillis === 'function' ? raw.toMillis() : raw;
+      return t >= d.start && t < dayEnd;
+    }).length;
+  });
+  const maxVisits = Math.max(1, ...visitCounts);
+  const weekBars = days.map((d, i) => `
+    <div class="trend-week-bar-wrap">
+      <div class="trend-week-bar" style="height:${Math.max(6, Math.round((visitCounts[i] / maxVisits) * 100))}%;"></div>
+      <div class="trend-week-day">${d.label}</div>
+    </div>`).join('');
+
+  box.innerHTML = `
+    <div class="trend-board">
+      <div class="trend-board-title">Growth status distribution</div>
+      ${distributionRows}
+    </div>
+    <div class="trend-board">
+      <div class="trend-board-title">Children seen, last 7 days</div>
+      <div class="trend-week-row">${weekBars}</div>
+    </div>`;
+}
+
+function renderNutritionOfficerHome(households) {
+  const statsBox = document.getElementById('dno-stats');
+  const listBox = document.getElementById('dno-child-list');
+  if (!statsBox || !listBox) return;
+
+  const children = households.filter((h) => h.memberType === 'child');
+  renderFlaggedChildren(children);
+  renderNutritionTrends(children);
+
+  const counts = { normal: 0, mild_underweight: 0, moderate_underweight: 0, severe_wasting: 0 };
+  children.forEach((h) => {
+    const status = h.growthStatus || 'normal';
+    if (counts[status] !== undefined) counts[status]++;
+  });
+
+  statsBox.innerHTML = `
+    <div class="quick-tile" style="cursor:default;"><span class="ic">👶</span><span class="lb">${children.length} children tracked</span></div>
+    <div class="quick-tile ${counts.severe_wasting + counts.moderate_underweight > 0 ? 'urgent-tile' : ''}" style="cursor:default;"><span class="ic">⚠️</span><span class="lb">${counts.severe_wasting + counts.moderate_underweight} need catch-up</span></div>
+    <div class="quick-tile" style="cursor:default;"><span class="ic">✅</span><span class="lb">${counts.normal} on track</span></div>
+    <div class="quick-tile" style="cursor:default;"><span class="ic">🚨</span><span class="lb">${counts.severe_wasting} severe — refer</span></div>`;
+
+  if (!children.length) {
+    listBox.innerHTML = '<p class="muted" style="padding:0 20px;">No children registered yet.</p>';
+    return;
+  }
+
+  const sorted = [...children].sort((a, b) =>
+    (GROWTH_PRIORITY[a.growthStatus || 'normal'] ?? 3) - (GROWTH_PRIORITY[b.growthStatus || 'normal'] ?? 3)
+  );
+
+  listBox.innerHTML = sorted.map((h) => `
+    <div class="card fade-in" onclick="openNutritionFromDNO('${h.id}')">
+      <span class="pulse ${growthPulseClass(h.growthStatus)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+      <div class="info">
+        <div class="name">${h.memberName}</div>
+        <div class="meta">${h.ageMonths ?? '—'} mo · ${h.community || ''} · <span class="mono">${h.season || 'rainy'} season</span></div>
+      </div>
+      <span class="chip ${growthPulseClass(h.growthStatus)}">${growthLabel(h.growthStatus)}</span>
+    </div>`).join('');
+}
+
+function renderTriageSigns(memberType, ageMonths) {
+  const container = document.getElementById('triage-signs');
+  let signs;
+  if (memberType === 'pregnant') {
+    signs = [...PREGNANCY_SIGNS.critical, ...PREGNANCY_SIGNS.moderate];
+  } else {
+    signs = [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS];
+    if (ageMonths != null && ageMonths < 1) signs = [...signs, ...NEWBORN_CRITICAL_SIGNS];
+  }
+  container.innerHTML = signs.map((s) =>
+    `<span class="toggle-chip" onclick="toggleTriageSign('${s.id}', this)">${s.label}</span>`
+  ).join('');
+}
+
+function openHousehold(id) {
+  const h = allHouseholds.find((x) => x.id === id);
+  if (!h) return;
+  currentHousehold = h;
+  triageSelectedSigns = new Set();
+  currentTriageResult = null;
+  document.getElementById('triage-name').textContent = h.memberName;
+  const visitsSoFar = (h.visitCount || 0) + 1; // this visit, about to be logged
+  document.getElementById('triage-meta').textContent = h.memberType === 'pregnant'
+    ? `${h.headName} · Pregnant, ${h.gestationWeeks} wks · Visit ${visitsSoFar}`
+    : `${h.headName} · Child, ${h.ageMonths} mo · Visit ${visitsSoFar}`;
+  renderTriageSigns(h.memberType, h.ageMonths);
+  document.getElementById('triage-result').innerHTML = '';
+  renderImmunizationChecklist(h);
+  setScreen('triage');
+  Data.logVisit(h.id); // attendance tracking — every open of a record counts as a visit
+}
+
+function renderImmunizationChecklist(h) {
+  const section = document.getElementById('triage-immunizations');
+  const list = document.getElementById('triage-immunizations-list');
+  if (!section || !list) return;
+  if (h.memberType !== 'child') {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  const given = h.immunizations || {};
+  list.innerHTML = IMMUNIZATION_SCHEDULE.map((v) => {
+    const rec = given[v.id];
+    const isGiven = !!(rec && rec.given);
+    const isOverdue = !isGiven && (h.ageMonths || 0) >= v.dueMonths;
+    return `
+      <div class="immun-row ${isGiven ? 'given' : isOverdue ? 'overdue' : ''}" onclick="toggleImmunization('${h.id}','${v.id}',${!isGiven})">
+        <span class="immun-check">${isGiven ? '✓' : ''}</span>
+        <div class="immun-info">
+          <div class="immun-label">${v.label}</div>
+          <div class="immun-due">Due around ${v.dueMonths} months${isOverdue ? ' · OVERDUE' : ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleImmunization(householdId, vaccineId, given) {
+  Data.updateImmunization(householdId, vaccineId, given).catch((err) => {
+    showAppError('Could not save immunization: ' + (err && err.message ? err.message : err));
+  });
+  // Optimistic local update so the checklist responds instantly, even offline.
+  const h = allHouseholds.find((x) => x.id === householdId);
+  if (h) {
+    if (!h.immunizations) h.immunizations = {};
+    h.immunizations[vaccineId] = { given, givenAt: given ? Date.now() : null };
+    renderImmunizationChecklist(h);
+  }
+}
+
+function formatRelative(ts) {
+  if (!ts) return 'No visits yet';
+  const t = (typeof ts === 'object' && ts.toMillis) ? ts.toMillis() : ts; // handle Firestore Timestamp
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days <= 0) return 'Seen today';
+  if (days === 1) return 'Seen yesterday';
+  return `Seen ${days} days ago`;
+}
+
+function renderRegisterResults(query) {
+  const q = query.trim().toLowerCase();
+  const container = document.getElementById('register-results');
+  const addBox = document.getElementById('register-add-new');
+  if (!q) {
+    container.innerHTML = '<p class="muted" style="padding:0 20px;">Start typing a name to find or check in a household.</p>';
+    addBox.style.display = 'none';
+    return;
+  }
+  const matches = allHouseholds.filter((h) =>
+    (h.headName || '').toLowerCase().includes(q) || (h.memberName || '').toLowerCase().includes(q)
+  );
+  if (matches.length) {
+    container.innerHTML = matches.map((h) => {
+      const level = h.currentRiskLevel || 'routine';
+      return `
+        <div class="card fade-in" onclick="openHousehold('${h.id}')">
+          <span class="pulse ${pulseClass(level)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+          <div class="info">
+            <div class="name">${h.headName}</div>
+            <div class="meta">${formatRelative(h.lastVisitAt)} · <span class="visit-tag">${h.visitCount || 0} visit${(h.visitCount || 0) === 1 ? '' : 's'}</span></div>
+          </div>
+          <span class="chip ${pulseClass(level)}">${level.toUpperCase()}</span>
+        </div>`;
+    }).join('');
+  } else {
+    container.innerHTML = '';
+  }
+  addBox.style.display = matches.length ? 'none' : 'block';
+  document.getElementById('register-add-name').textContent = query.trim();
+}
+
+let addHHType = 'pregnant';
+function toggleAddType(type, btn) {
+  addHHType = type;
+  document.querySelectorAll('#add-hh-type-toggle .role-btn').forEach((b) => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('add-hh-pregnant-fields').style.display = type === 'pregnant' ? '' : 'none';
+  document.getElementById('add-hh-child-fields').style.display = type === 'child' ? '' : 'none';
+}
+
+function openAddHouseholdForm() {
+  const typed = document.getElementById('register-search').value.trim();
+  document.getElementById('add-hh-name').value = typed;
+  document.getElementById('add-hh-name-error').classList.remove('show');
+  document.getElementById('add-hh-name').classList.remove('error');
+  setScreen('add-household');
+}
+
+function saveNewHousehold() {
+  const nameEl = document.getElementById('add-hh-name');
+  const headName = nameEl.value.trim();
+  if (!headName) {
+    nameEl.classList.add('error');
+    document.getElementById('add-hh-name-error').classList.add('show');
+    return;
+  }
+  const community = document.getElementById('add-hh-community').value.trim() || 'Zorborgu';
+  const distanceVal = parseFloat(document.getElementById('add-hh-distance').value);
+  let facilityName = null, region = null;
+  try {
+    facilityName = localStorage.getItem('responda_facility_name');
+    region = localStorage.getItem('responda_region');
+  } catch (e) {}
+  const base = {
+    headName, memberName: headName, community,
+    distanceFromFacility: isNaN(distanceVal) ? null : distanceVal,
+    currentRiskLevel: 'routine', memberType: addHHType,
+    facilityName: facilityName || 'Unassigned facility',
+    region: region || null,
+  };
+  if (addHHType === 'pregnant') {
+    base.gestationWeeks = parseInt(document.getElementById('add-hh-gestation').value, 10) || null;
+  } else {
+    base.ageMonths = parseInt(document.getElementById('add-hh-age').value, 10) || 0;
+    base.growthStatus = 'normal';
+    base.season = 'rainy';
+  }
+  const saveBtn = document.querySelector('#mobile-add-household .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+  Data.createHousehold(base).then((id) => {
+    document.getElementById('add-hh-name').value = '';
+    document.getElementById('add-hh-community').value = '';
+    document.getElementById('add-hh-gestation').value = '';
+    document.getElementById('add-hh-age').value = '';
+    document.getElementById('add-hh-distance').value = '';
+    setScreen('home');
+  }).catch((err) => {
+    showAppError('Could not save household: ' + (err && err.message ? err.message : err));
+  }).finally(() => {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save household'; }
+  });
+}
+
+function addHouseholdDesktopQuick() {
+  const name = window.prompt('Client / household name:');
+  if (!name || !name.trim()) return;
+  const community = window.prompt('Community:', 'Zorborgu') || 'Zorborgu';
+  const isChild = window.confirm('Tracking a child under 5?\n\nOK = child under 5\nCancel = pregnant woman');
+  const base = { headName: name.trim(), memberName: name.trim(), community, currentRiskLevel: 'routine' };
+  if (isChild) {
+    const age = parseInt(window.prompt('Age in months:', '12'), 10);
+    base.memberType = 'child';
+    base.ageMonths = isNaN(age) ? 12 : age;
+    base.growthStatus = 'normal';
+    base.season = 'rainy';
+  } else {
+    const wks = parseInt(window.prompt('Weeks pregnant:', '20'), 10);
+    base.memberType = 'pregnant';
+    base.gestationWeeks = isNaN(wks) ? 20 : wks;
+  }
+  Data.createHousehold(base);
+}
+
+function renderTriageResult(result) {
+  currentTriageResult = result;
+  const box = document.getElementById('triage-result');
+  const reasons = result.reasons.length
+    ? result.reasons.map((r) => `<li>${r}</li>`).join('')
+    : '<li>No danger signs selected</li>';
+  const title = result.level === 'urgent' ? 'Urgent — refer now'
+    : result.level === 'caution' ? 'Caution — monitor closely'
+    : 'Routine — no danger signs';
+  box.innerHTML = `
+    <div class="result-panel ${result.level} fade-in">
+      <span class="pulse ${result.level}"><span class="pulse-core"></span></span>
+      <h3>${title}</h3>
+      <p>${result.reasons.length} danger sign${result.reasons.length === 1 ? '' : 's'} detected</p>
+    </div>
+    <ul class="reason-list">${reasons}</ul>
+    <div style="padding:0 16px 90px;">
+      <button class="btn-primary" onclick="generateReferral()">
+        ${result.level === 'urgent' ? 'Generate referral note' : 'Save assessment'}
+      </button>
+    </div>`;
+}
+
+function runTriageAssessment() {
+  if (!currentHousehold) return;
+  const ids = Array.from(triageSelectedSigns);
+  const result = currentHousehold.memberType === 'pregnant'
+    ? assessPregnancy(ids)
+    : assessChild({ ageMonths: currentHousehold.ageMonths, selectedSignIds: ids });
+  renderTriageResult(result);
+}
+
+function toggleTriageSign(id, el) {
+  if (triageSelectedSigns.has(id)) { triageSelectedSigns.delete(id); el.classList.remove('on'); }
+  else { triageSelectedSigns.add(id); el.classList.add('on'); }
+}
+
+function renderReferralSummary(h, result) {
+  document.getElementById('referral-summary').innerHTML = `
+    <div style="display:flex;justify-content:space-between;">
+      <div>
+        <div class="name">${h.memberName}</div>
+        <div class="meta mono">${h.headName} · ${h.memberType === 'pregnant' ? h.gestationWeeks + ' wks pregnant' : h.ageMonths + ' mo'}</div>
+      </div>
+      <span class="chip urgent">URGENT</span>
+    </div>
+    <div style="border-top:1px dashed var(--border); margin:12px 0; padding-top:10px; font-size:12.5px; color:var(--ink-muted); line-height:1.7;">
+      ${result.reasons.join(' · ')}<br>
+      <span class="mono" style="font-size:11px;">Distance to facility: ${h.distanceFromFacility ?? '—'}km</span>
+    </div>`;
+}
+
+function renderReferralStatus(referral) {
+  const stepper = document.getElementById('referral-stepper');
+  const note = document.getElementById('referral-fallback-note');
+  if (!stepper) return;
+  const synced = referral.syncState === 'synced';
+  const ack = referral.status === 'acknowledged';
+  stepper.innerHTML = `
+    <div class="step done"><div class="dot"></div><div><div class="label">Note ${synced ? 'synced to facility' : 'queued'}</div><div class="sub">${synced ? 'confirmed on server' : 'saved offline on device'}</div></div></div>
+    <div class="step ${synced ? 'done' : 'active'}"><div class="dot"></div><div><div class="label">${synced ? 'Sent to facility' : 'Waiting for signal…'}</div></div></div>
+    <div class="step ${ack ? 'done' : ''}"><div class="dot"></div><div><div class="label">${ack ? 'Acknowledged' : 'Awaiting acknowledgement'}</div></div></div>`;
+  if (note) note.textContent = synced ? '' : 'No signal yet — SMS fallback armed, will send automatically once in range.';
+}
+
+function generateReferral() {
+  if (!currentHousehold || !currentTriageResult) return;
+  const h = currentHousehold;
+  const result = currentTriageResult;
+  Data.saveRiskAssessment({
+    householdId: h.id, memberType: h.memberType,
+    dangerSigns: Array.from(triageSelectedSigns), riskLevel: result.level, reasons: result.reasons,
+  }).then((assessmentId) => {
+    Data.updateMemberRisk(h.id, result.level);
+    h.currentRiskLevel = result.level;
+    if (result.level !== 'urgent') { setScreen('home'); return; }
+    return Data.createReferral({
+      assessmentId, householdId: h.id, urgency: result.level,
+      reasonSummary: result.reasons.join('; '), distanceKm: h.distanceFromFacility,
+      facilityName: h.facilityName || null,
+    }).then((referralId) => {
+      Data.subscribeReferral(referralId, renderReferralStatus);
+      renderReferralSummary(h, result);
+      setScreen('referral');
+    });
+  }).catch((err) => {
+    showAppError('Could not save this assessment: ' + (err && err.message ? err.message : err));
+  });
+}
+
+function openNutritionForChild(h) {
+  currentHousehold = h;
+  document.getElementById('nutrition-name').textContent = h.memberName;
+  document.getElementById('nutrition-meta').textContent = `${h.ageMonths} months`;
+  const plan = getNutritionPlan({ ageMonths: h.ageMonths, growthStatus: h.growthStatus, season: h.season || 'rainy' });
+  const box = document.getElementById('nutrition-content');
+  if (plan.needsReferral) {
+    box.innerHTML = `<div class="result-panel urgent"><h3>Refer today</h3><p>${plan.message}</p></div>`;
+    return;
+  }
+  const statusLabel = h.growthStatus && h.growthStatus !== 'normal' ? h.growthStatus.replace('_', ' ') : null;
+  box.innerHTML = `
+    ${statusLabel ? `<span class="tag-status">${statusLabel} — catch-up plan</span>` : ''}
+    <div class="section-eyebrow">This week's local food plan</div>
+    ${(plan.weeklyPlan || []).map((d) => `<div class="food-card"><div class="day">${d.day.toUpperCase()}</div><div class="desc">${d.desc}</div></div>`).join('') || '<p class="muted" style="padding:0 16px;">No plan available for this age yet.</p>'}
+    <p class="mono" style="padding:12px 16px 90px; font-size:11px; color:var(--ink-muted);">${plan.tip || ''}</p>`;
+}
+
+function openNutritionAuto() {
+  window.nutritionReturnScreen = 'home';
+  const bn = document.getElementById('nutrition-bottom-nav');
+  if (bn) bn.style.display = '';
+  const target = (currentHousehold && currentHousehold.memberType === 'child')
+    ? currentHousehold
+    : allHouseholds.find((h) => h.memberType === 'child');
+  if (target) openNutritionForChild(target);
+  setScreen('nutrition');
+}
+
+// Entry point for the District Nutrition Officer flow — same rendering,
+// different origin/return screen, and the worker-only tabs (Households,
+// Referrals) are hidden since they're not relevant to this role.
+function openNutritionFromDNO(householdId) {
+  const h = allHouseholds.find((x) => x.id === householdId);
+  if (!h) return;
+  window.nutritionReturnScreen = 'dno-home';
+  const bn = document.getElementById('nutrition-bottom-nav');
+  if (bn) bn.style.display = 'none';
+  openNutritionForChild(h);
+  setScreen('nutrition');
+}
+
+/* ---------------------------------------------------------------
+   CAREGIVER: household linking (device-level identity)
+   ---------------------------------------------------------------
+   A caregiver's phone remembers which household it belongs to via
+   localStorage — matches the real workflow: it's THEIR device, so the
+   device itself is the identity, no separate account system needed for
+   this MVP. A worker must have already registered the household first;
+   caregivers can only link to, never create, a record.
+   --------------------------------------------------------------- */
+const CG_LINK_KEY = 'responda_caregiver_household_id';
+let currentCaregiverHousehold = null;
+
+function renderCaregiverLinkResults(query) {
+  const q = query.trim().toLowerCase();
+  const container = document.getElementById('cg-link-results');
+  if (!q) {
+    container.innerHTML = '<p class="muted" style="padding:0 20px;">Start typing to find your record.</p>';
+    return;
+  }
+  const matches = allHouseholds.filter((h) =>
+    (h.headName || '').toLowerCase().includes(q) || (h.memberName || '').toLowerCase().includes(q)
+  );
+  container.innerHTML = matches.length
+    ? matches.map((h) => `
+        <div class="card fade-in" onclick="linkCaregiverHousehold('${h.id}')">
+          <span class="pulse ${pulseClass(h.currentRiskLevel || 'routine')}"><span class="pulse-core">${initials(h.headName)}</span></span>
+          <div class="info"><div class="name">${h.headName}</div><div class="meta">${h.community || ''}</div></div>
+        </div>`).join('')
+    : '<p class="muted" style="padding:0 20px;">No record found with that name.</p>';
+}
+
+function linkCaregiverHousehold(householdId) {
+  try { localStorage.setItem(CG_LINK_KEY, householdId); } catch (e) {}
+  loadCaregiverHousehold(householdId);
+}
+
+function loadCaregiverHousehold(householdId) {
+  Data.subscribeHousehold(householdId, (h) => {
+    currentCaregiverHousehold = h;
+    renderCaregiverHome(h);
+  });
+  setScreen('cg-home');
+}
+
+function renderCaregiverHome(h) {
+  if (!h) return;
+  const isPregnant = h.memberType === 'pregnant';
+  const greeting = document.getElementById('cg-greeting');
+  const tileLabel = document.getElementById('cg-checkup-tile-label');
+  if (greeting) greeting.textContent = `Welcome back! I'm Abena — here to help you look after ${isPregnant ? 'yourself and your pregnancy' : h.memberName}.`;
+  if (tileLabel) tileLabel.textContent = isPregnant ? 'Check on myself' : 'Check my baby';
+
+  const banner = document.getElementById('cg-next-vaccine-banner');
+  const bannerText = document.getElementById('cg-next-vaccine-text');
+  if (!isPregnant && banner && bannerText) {
+    const next = getNextDueVaccine(h);
+    if (next) {
+      banner.style.display = '';
+      bannerText.textContent = next.overdue
+        ? `💉 ${next.label} — overdue, ask your worker at your next visit`
+        : `💉 ${next.label} — due around ${next.dueMonths} months`;
+    } else {
+      banner.style.display = 'none';
+    }
+  } else if (banner) {
+    banner.style.display = 'none';
+  }
+}
+
+// Returns the next not-yet-given vaccine due for a child, or null if
+// fully up to date for their current age (see IMMUNIZATION_SCHEDULE
+// caveat above re: month-approximated week-based doses).
+function getNextDueVaccine(h) {
+  if (h.memberType !== 'child') return null;
+  const given = h.immunizations || {};
+  const pending = IMMUNIZATION_SCHEDULE.filter((v) => !given[v.id] || !given[v.id].given);
+  if (!pending.length) return null;
+  const next = pending[0];
+  return { ...next, overdue: (h.ageMonths || 0) >= next.dueMonths };
+}
+
+function openCaregiverFeeding() {
+  renderCaregiverFeeding(currentCaregiverHousehold);
+  setScreen('cg-feeding');
+}
+
+function renderCaregiverFeeding(h) {
+  const titleEl = document.getElementById('cg-feeding-title');
+  const box = document.getElementById('cg-feeding-content');
+  if (!box) return;
+  if (!h) {
+    box.innerHTML = '<p class="muted" style="padding:0 20px;">Link your household first to see feeding guidance.</p>';
+    return;
+  }
+  if (h.memberType === 'pregnant') {
+    // Previously this screen always showed baby-food content, even to a
+    // pregnant caregiver — a real gap given Upper West's 44.2% maternal
+    // anaemia rate. This is the pregnancy-appropriate version.
+    if (titleEl) titleEl.textContent = 'Eating well in pregnancy';
+    box.innerHTML = `
+      <div class="speech-bubble" style="margin:14px 16px;"><span>Anaemia is common in pregnancy here — these foods help prevent it, alongside any iron tablets your health worker gives you.</span><button class="say-btn">🔊</button></div>
+      <div class="section-eyebrow">Iron-rich foods to eat often</div>
+      <div class="food-card"><div class="day">🥬</div><div class="desc">Dark leafy greens — ayoyo, kontomire, moringa</div></div>
+      <div class="food-card"><div class="day">🫘</div><div class="desc">Beans, groundnuts, and dawadawa</div></div>
+      <div class="food-card"><div class="day">🍖</div><div class="desc">Liver or other organ meat, when available</div></div>
+      <div class="food-card"><div class="day">🍊</div><div class="desc">Orange, or another vitamin C fruit, alongside meals — helps your body absorb iron</div></div>
+      <p class="mono" style="padding:12px 16px 90px; font-size:11px; color:var(--ink-muted);">Tip: tea or coffee right after a meal can reduce iron absorption — better to have them between meals.</p>`;
+    return;
+  }
+  if (titleEl) titleEl.textContent = 'Feeding your child well';
+  const plan = getNutritionPlan({ ageMonths: h.ageMonths, growthStatus: h.growthStatus, season: h.season || 'rainy' });
+  if (plan.needsReferral) {
+    box.innerHTML = `<div class="result-panel urgent" style="margin:16px;"><h3>Refer today</h3><p>${plan.message}</p></div>`;
+    return;
+  }
+  const statusLabel = h.growthStatus && h.growthStatus !== 'normal' ? h.growthStatus.replace('_', ' ') : null;
+  box.innerHTML = `
+    ${statusLabel ? `<span class="tag-status">${statusLabel} — catch-up plan</span>` : ''}
+    <div class="section-eyebrow">This week's local food plan</div>
+    ${(plan.weeklyPlan || []).map((d) => `<div class="food-card"><div class="day">${d.day.toUpperCase()}</div><div class="desc">${d.desc}</div></div>`).join('') || '<p class="muted" style="padding:0 16px;">No plan available for this age yet.</p>'}
+    <p class="mono" style="padding:12px 16px 90px; font-size:11px; color:var(--ink-muted);">${plan.tip || ''}</p>`;
+}
+
+function openCaregiverReminders() {
+  renderCaregiverReminders(currentCaregiverHousehold);
+  setScreen('cg-reminders');
+}
+
+function renderCaregiverReminders(h) {
+  const box = document.getElementById('cg-reminders-content');
+  if (!box) return;
+  if (!h) {
+    box.innerHTML = '<p class="muted" style="padding:0 20px;">Link your household first to see reminders.</p>';
+    return;
+  }
+  if (h.memberType === 'pregnant') {
+    box.innerHTML = `
+      <div class="section-eyebrow">Upcoming</div>
+      <div class="reminder-card"><span class="ric">🤰</span><div class="info2"><div class="t1">Antenatal care visits</div><div class="t2">KEEP ATTENDING AS SCHEDULED</div></div></div>
+      <div class="reminder-card" style="margin-bottom:90px;"><span class="ric">🩺</span><div class="info2"><div class="t1">Check in with yourself daily</div><div class="t2">USE THE CHECK-UP TAB IF ANYTHING FEELS WRONG</div></div></div>`;
+    return;
+  }
+  const given = h.immunizations || {};
+  const pending = IMMUNIZATION_SCHEDULE.filter((v) => !given[v.id] || !given[v.id].given)
+    .map((v) => ({ ...v, overdue: (h.ageMonths || 0) >= v.dueMonths }));
+  if (!pending.length) {
+    box.innerHTML = `
+      <div class="section-eyebrow">Immunizations</div>
+      <div class="reminder-card" style="margin-bottom:90px;"><span class="ric">✅</span><div class="info2"><div class="t1">All caught up for now</div><div class="t2">NO DOSES CURRENTLY DUE</div></div></div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div class="section-eyebrow">Immunizations due</div>
+    ${pending.map((v, i) => `
+      <div class="reminder-card" style="${i === pending.length - 1 ? 'margin-bottom:90px;' : ''}">
+        <span class="ric">${v.overdue ? '⚠️' : '💉'}</span>
+        <div class="info2">
+          <div class="t1">${v.label}</div>
+          <div class="t2">${v.overdue ? 'OVERDUE — ASK AT YOUR NEXT VISIT' : 'DUE AROUND ' + v.dueMonths + ' MONTHS'}</div>
+        </div>
+      </div>`).join('')}`;
+}
+
+/* ---------------------------------------------------------------
+   CAREGIVER: dynamic sign-based self-check and reporting
+   ---------------------------------------------------------------
+   Reuses the exact same engine (assessPregnancy/assessChild) the CHPS
+   worker's Triage screen uses — the difference is purely presentation
+   and what happens with the result. Routine results stay local and
+   reassure the caregiver; caution/urgent results are also sent to the
+   assigned health worker as a report, so real danger signs never go
+   unseen just because the caregiver couldn't reach the compound.
+   --------------------------------------------------------------- */
+let cgReportSigns = new Set();
+
+function renderCaregiverSigns() {
+  const h = currentCaregiverHousehold;
+  if (!h) return;
+  const isPregnant = h.memberType === 'pregnant';
+  const titleEl = document.getElementById('cg-checkup-title');
+  if (titleEl) titleEl.textContent = isPregnant ? 'How are you feeling today?' : 'How is your baby today?';
+  const signs = isPregnant
+    ? [...PREGNANCY_SIGNS.critical, ...PREGNANCY_SIGNS.moderate]
+    : (h.ageMonths != null && h.ageMonths < 1
+        ? [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...NEWBORN_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS]
+        : [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS]);
+  cgReportSigns = new Set();
+  const container = document.getElementById('cg-signs');
+  if (container) {
+    container.innerHTML = signs.map((s) =>
+      `<span class="toggle-chip" onclick="toggleCaregiverSign('${s.id}', this)">${s.label}</span>`
+    ).join('');
+  }
+  const resultBox = document.getElementById('cg-result');
+  if (resultBox) resultBox.innerHTML = '';
+}
+
+function toggleCaregiverSign(id, el) {
+  if (cgReportSigns.has(id)) { cgReportSigns.delete(id); el.classList.remove('on'); }
+  else { cgReportSigns.add(id); el.classList.add('on'); }
+}
+
+function runCaregiverCheck() {
+  const h = currentCaregiverHousehold;
+  if (!h) return;
+  const ids = Array.from(cgReportSigns);
+  const result = h.memberType === 'pregnant'
+    ? assessPregnancy(ids)
+    : assessChild({ ageMonths: h.ageMonths, selectedSignIds: ids });
+  renderCaregiverResult(result);
+  if (result.level !== 'routine') {
+    Data.saveCaregiverReport(h.id, { level: result.level, reasons: result.reasons, selectedSignIds: ids }).catch((err) => {
+      showAppError('Could not send your report to your health worker: ' + (err && err.message ? err.message : err) + '. It will not retry automatically — please try again.');
+    });
+  }
+}
+
+function renderCaregiverResult(result) {
+  const box = document.getElementById('cg-result');
+  if (!box) return;
+  if (result.level === 'urgent') {
+    box.innerHTML = `
+      <div class="result-panel urgent fade-in">
+        <span class="pulse urgent"><span class="pulse-core"></span></span>
+        <h3>Please get help now</h3>
+        <p>${result.reasons.join(', ')}. This has been sent to your health worker too.</p>
+      </div>
+      <div style="padding:0 16px 90px; display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary coral">📞 Call my health worker</button>
+        <button class="btn-ghost" onclick="renderCaregiverSigns()">Check again</button>
+      </div>`;
+  } else if (result.level === 'caution') {
+    box.innerHTML = `
+      <div class="result-panel caution fade-in">
+        <span class="pulse caution"><span class="pulse-core"></span></span>
+        <h3>Keep a close eye</h3>
+        <p>${result.reasons.join(', ')}. We've let your health worker know, just in case.</p>
+      </div>
+      <div style="padding:0 16px 90px;"><button class="btn-ghost" style="width:100%;" onclick="renderCaregiverSigns()">Check again</button></div>`;
+  } else {
+    box.innerHTML = `
+      <div class="result-panel routine fade-in">
+        <span class="pulse routine"><span class="pulse-core"></span></span>
+        <h3>Looking good</h3>
+        <p>No danger signs right now — keep watching and check again tomorrow.</p>
+      </div>
+      <div style="padding:0 16px 90px;"><button class="btn-ghost" style="width:100%;" onclick="renderCaregiverSigns()">Check again</button></div>`;
+  }
+}
+
+// Expose everything the inline onclick="" attributes in the HTML need —
+// they resolve from global scope, which a module script does NOT export to
+// automatically, so this bridge is required.
+window.openHousehold = openHousehold;
+window.renderRegisterResults = renderRegisterResults;
+window.toggleAddType = toggleAddType;
+window.openAddHouseholdForm = openAddHouseholdForm;
+window.saveNewHousehold = saveNewHousehold;
+window.Data = Data;
+window.bootHouseholdData = bootHouseholdData;
+window.addHouseholdDesktopQuick = addHouseholdDesktopQuick;
+window.toggleTriageSign = toggleTriageSign;
+window.runTriageAssessment = runTriageAssessment;
+window.generateReferral = generateReferral;
+window.openNutritionAuto = openNutritionAuto;
+window.openNutritionFromDNO = openNutritionFromDNO;
+window.assessChildDemo = assessChild;
+window.toggleImmunization = toggleImmunization;
+window.acknowledgeCaregiverReportAndOpen = acknowledgeCaregiverReportAndOpen;
+window.acknowledgeChildFlagAndOpen = acknowledgeChildFlagAndOpen;
+window.renderCaregiverLinkResults = renderCaregiverLinkResults;
+window.linkCaregiverHousehold = linkCaregiverHousehold;
+window.renderCaregiverSigns = renderCaregiverSigns;
+window.toggleCaregiverSign = toggleCaregiverSign;
+window.runCaregiverCheck = runCaregiverCheck;
+window.openCaregiverReminders = openCaregiverReminders;
+window.openCaregiverFeeding = openCaregiverFeeding;
+let householdDataBooted = false;
+async function bootHouseholdData(facilityName) {
+  try {
+    if (facilityName) {
+      await Data.seedIfEmpty(facilityName);
+    }
+    Data.subscribeHouseholds(facilityName || null, renderHouseholds);
+    householdDataBooted = true;
+  } catch (err) {
+    showAppError('Could not load household data: ' + (err && err.message ? err.message : err));
+  }
+}
+
+window.onLoginComplete = function (role) {
+  let facilityName = null, region = null, staffId = null;
+  if (role === 'worker' || role === 'nutrition-officer') {
+    try {
+      facilityName = localStorage.getItem('responda_facility_name');
+      region = localStorage.getItem('responda_region');
+      staffId = localStorage.getItem('responda_staff_id');
+    } catch (e) {}
+  }
+  if (role === 'nutrition-officer') {
+    const facilityLabel = document.getElementById('dno-facility-name');
+    const regionLabel = document.getElementById('dno-region');
+    if (facilityLabel) facilityLabel.textContent = facilityName || 'Unassigned facility';
+    if (regionLabel) regionLabel.textContent = region ? region + ' Region' : '\u2014';
+  }
+  if (role === 'worker') {
+    const staffLabel = document.getElementById('home-staff-id');
+    const detailLabel = document.getElementById('home-facility-region');
+    if (staffLabel) staffLabel.textContent = staffId || 'CHPS Worker';
+    if (detailLabel) detailLabel.textContent = [facilityName, region ? region + ' Region' : null].filter(Boolean).join(' · ') || '\u2014';
+  }
+  // Workers/officers see only their facility's households. Caregivers get
+  // an unscoped subscription (facilityName = null) purely so the "find my
+  // household" search on the linking screen has something to search —
+  // they never see this as a browsable list themselves.
+  bootHouseholdData(facilityName);
+
+  if (role !== 'caregiver') return;
+  let linkedId = null;
+  try { linkedId = localStorage.getItem(CG_LINK_KEY); } catch (e) {}
+  if (linkedId) {
+    loadCaregiverHousehold(linkedId);
+  } else {
+    setScreen('cg-link');
+  }
+};
+
+// ---- Service worker: caches the app shell so it opens even after days offline ----
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('[Responda] Service worker registration failed (non-fatal):', err);
+    });
+  });
+}
+</script>
+
+</body>
+</html>
