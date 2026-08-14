@@ -621,6 +621,19 @@
             <div id="login-facility-error" class="field-error">Please enter your facility name.</div>
           </div>
 
+          <div id="login-region-fields" style="width:100%;max-width:280px;margin-top:14px;">
+            <label class="field-label">Region</label>
+            <select id="login-region" class="field-input">
+              <option value="">Select a region…</option>
+              <option value="Northern">Northern</option>
+              <option value="North East">North East</option>
+              <option value="Savannah">Savannah</option>
+              <option value="Upper East">Upper East</option>
+              <option value="Upper West">Upper West</option>
+            </select>
+            <div id="login-region-error" class="field-error">Please select your region.</div>
+          </div>
+
           <div id="login-caregiver-note" style="display:none; max-width:260px; text-align:center; margin-top:24px;">
             <p class="muted">No password needed — next we'll link this device to your (or your child's) health record.</p>
           </div>
@@ -647,8 +660,8 @@
 
         <div style="padding:14px 20px 4px;">
           <div style="font-size:13px;color:var(--ink-muted);">Good morning,</div>
-          <div style="font-size:19px;font-weight:700;">Ayishetu Mahama</div>
-          <div class="mono" style="font-size:11px;color:var(--ink-muted);margin-top:2px;">CHPS Compound · Zorborgu · ID CW-0417</div>
+          <div style="font-size:19px;font-weight:700;" id="home-staff-id">CHPS Worker</div>
+          <div class="mono" style="font-size:11px;color:var(--ink-muted);margin-top:2px;" id="home-facility-region">—</div>
         </div>
 
         <div id="caregiver-reports-section" style="display:none;">
@@ -907,6 +920,7 @@
         <div style="padding:14px 20px 4px;">
           <div style="font-size:13px;color:var(--ink-muted);">District Nutrition Officer</div>
           <div style="font-size:19px;font-weight:700;" id="dno-facility-name">Loading facility…</div>
+          <div class="mono" style="font-size:11px;color:var(--ink-muted);margin-top:2px;" id="dno-region">—</div>
         </div>
 
         <div id="dno-flagged-section" style="display:none;">
@@ -957,7 +971,7 @@
 
         <div class="quick-grid">
           <div class="quick-tile urgent-tile" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><span class="ic">🩺</span><span class="lb" id="cg-checkup-tile-label">Check my baby</span></div>
-          <div class="quick-tile" onclick="setScreen('cg-feeding')"><span class="ic">🥣</span><span class="lb">Feeding guide</span></div>
+          <div class="quick-tile" onclick="openCaregiverFeeding()"><span class="ic">🥣</span><span class="lb">Feeding guide</span></div>
           <div class="quick-tile" onclick="openCaregiverReminders()"><span class="ic">🔔</span><span class="lb">Reminders</span></div>
           <div class="quick-tile"><span class="ic">📞</span><span class="lb">Call my worker</span></div>
         </div>
@@ -969,7 +983,7 @@
         <div class="bottom-nav">
           <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
           <div class="nav-item" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
-          <div class="nav-item" onclick="setScreen('cg-feeding')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item" onclick="openCaregiverFeeding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
           <div class="nav-item" onclick="openCaregiverReminders()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
         </div>
       </div>
@@ -995,7 +1009,7 @@
         <div class="bottom-nav">
           <div class="nav-item" onclick="setScreen('cg-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
           <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
-          <div class="nav-item" onclick="setScreen('cg-feeding')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item" onclick="openCaregiverFeeding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
           <div class="nav-item" onclick="openCaregiverReminders()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
         </div>
       </div>
@@ -1005,20 +1019,11 @@
         <div class="top-bar">
           <div style="display:flex;align-items:center;gap:10px;">
             <svg onclick="setScreen('cg-home')" style="cursor:pointer;" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            <div style="font-weight:700;font-size:15px;">Feeding your baby well</div>
+            <div style="font-weight:700;font-size:15px;" id="cg-feeding-title">Feeding guide</div>
           </div>
         </div>
-        <div class="speech-bubble" style="margin:14px 16px;"><span>Try to include groundnut soup at least twice this week — it helps your baby grow strong.</span><button class="say-btn">🔊</button></div>
 
-        <div class="section-eyebrow">This week</div>
-        <div class="food-card"><div class="day">MON</div><div class="desc">🍚 TZ + groundnut soup + moringa</div></div>
-        <div class="food-card"><div class="day">TUE</div><div class="desc">🍛 Waakye + boiled egg + gari</div></div>
-        <div class="food-card"><div class="day">WED</div><div class="desc">🥟 Koose + kooko + groundnuts</div></div>
-        <div class="food-card"><div class="day">THU</div><div class="desc">🐟 TZ + ayoyo soup + dried fish</div></div>
-        <div class="food-card"><div class="day">FRI</div><div class="desc">🫘 Beans + gari + palm oil</div></div>
-        <div class="food-card"><div class="day">SAT</div><div class="desc">🍲 Banku + light soup + fish</div></div>
-        <div class="food-card"><div class="day">SUN</div><div class="desc">🍊 Rice + groundnut soup + orange</div></div>
-        <p class="mono" style="padding:12px 16px 90px; font-size:11px; color:var(--ink-muted);">Foods you can find in your market this season.</p>
+        <div id="cg-feeding-content"><!-- populated by renderCaregiverFeeding() --></div>
 
         <div class="bottom-nav">
           <div class="nav-item" onclick="setScreen('cg-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
@@ -1042,7 +1047,7 @@
         <div class="bottom-nav">
           <div class="nav-item" onclick="setScreen('cg-home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
           <div class="nav-item" onclick="setScreen('cg-checkup'); renderCaregiverSigns();"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>Check-up</div>
-          <div class="nav-item" onclick="setScreen('cg-feeding')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
+          <div class="nav-item" onclick="openCaregiverFeeding()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c4 3 4 8 4 8s-4 1-4 5 4 5 4 5" /><path d="M12 2C8 5 8 10 8 10s4 1 4 5-4 5-4 5"/></svg>Feeding</div>
           <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Reminders</div>
         </div>
       </div>
@@ -1258,6 +1263,7 @@
   let loginRole = 'worker';
   const STAFF_ID_KEY = 'responda_staff_id';
   const FACILITY_KEY = 'responda_facility_name';
+  const REGION_KEY = 'responda_region';
 
   function setRole(role, btn){
     loginRole = role;
@@ -1266,9 +1272,11 @@
     const isStaff = role === 'worker' || role === 'nutrition-officer';
     const staffFields = document.getElementById('login-staff-fields');
     const facilityFields = document.getElementById('login-facility-fields');
+    const regionFields = document.getElementById('login-region-fields');
     const cgNote = document.getElementById('login-caregiver-note');
     if (staffFields) staffFields.style.display = isStaff ? '' : 'none';
     if (facilityFields) facilityFields.style.display = isStaff ? '' : 'none';
+    if (regionFields) regionFields.style.display = isStaff ? '' : 'none';
     if (cgNote) cgNote.style.display = isStaff ? 'none' : '';
     hideLoginError();
     updateContinueButtonLabel();
@@ -1287,15 +1295,18 @@
   }
 
   function prefillStaffId(){
-    let savedId = null, savedFacility = null;
+    let savedId = null, savedFacility = null, savedRegion = null;
     try {
       savedId = localStorage.getItem(STAFF_ID_KEY);
       savedFacility = localStorage.getItem(FACILITY_KEY);
+      savedRegion = localStorage.getItem(REGION_KEY);
     } catch(e){}
     const idInput = document.getElementById('login-staff-id');
     const facilityInput = document.getElementById('login-facility');
+    const regionInput = document.getElementById('login-region');
     if (savedId && idInput && !idInput.value) idInput.value = savedId;
     if (savedFacility && facilityInput && !facilityInput.value) facilityInput.value = savedFacility;
+    if (savedRegion && regionInput && !regionInput.value) regionInput.value = savedRegion;
     updateContinueButtonLabel();
   }
 
@@ -1318,17 +1329,23 @@
       const idError = document.getElementById('login-staff-id-error');
       const facilityInput = document.getElementById('login-facility');
       const facilityError = document.getElementById('login-facility-error');
+      const regionInput = document.getElementById('login-region');
+      const regionError = document.getElementById('login-region-error');
       const idVal = idInput.value.trim();
       const facilityVal = facilityInput.value.trim();
+      const regionVal = regionInput.value;
       let valid = true;
       if (!idVal) { idInput.classList.add('error'); idError.classList.add('show'); valid = false; }
       else { idInput.classList.remove('error'); idError.classList.remove('show'); }
       if (!facilityVal) { facilityInput.classList.add('error'); facilityError.classList.add('show'); valid = false; }
       else { facilityInput.classList.remove('error'); facilityError.classList.remove('show'); }
+      if (!regionVal) { regionInput.classList.add('error'); regionError.classList.add('show'); valid = false; }
+      else { regionInput.classList.remove('error'); regionError.classList.remove('show'); }
       if (!valid) return;
       try {
         localStorage.setItem(STAFF_ID_KEY, idVal);
         localStorage.setItem(FACILITY_KEY, facilityVal);
+        localStorage.setItem(REGION_KEY, regionVal);
       } catch(e){}
     }
     const dest = loginRole === 'worker' ? 'home' : loginRole === 'nutrition-officer' ? 'dno-home' : 'cg-home';
@@ -1396,6 +1413,14 @@ const PREGNANCY_SIGNS = {
     { id: 'severe_vomiting', label: 'Severe vomiting, unable to keep fluids down' },
     { id: 'pallor', label: 'Pale skin / signs of anaemia' },
     { id: 'mild_headache', label: 'Headache without visual changes' },
+    // Anaemia-specific cluster — Upper West's maternal anaemia rate (44.2%)
+    // was previously covered by a single "pallor" checkbox. These give it
+    // real weight: any two together (very common anaemia presentation)
+    // escalate to urgent under the same rule that already handles the
+    // pre-eclampsia pattern (elevated_bp + headache).
+    { id: 'fatigue_weakness', label: 'Unusual tiredness or weakness' },
+    { id: 'dizziness', label: 'Dizziness or feeling faint' },
+    { id: 'shortness_of_breath', label: 'Shortness of breath with light activity' },
   ],
 };
 
@@ -1410,6 +1435,16 @@ const CHILD_CRITICAL_SIGNS = [
   { id: 'sunken_eyes_no_drink', label: 'Sunken eyes and unable to drink (dehydration)' },
   { id: 'visible_severe_wasting', label: 'Visible severe wasting, or swelling of both feet' },
   { id: 'fever_under_2mo', label: 'Any fever in a baby under 2 months old' },
+];
+// Newborn/birth signs — shown only for infants under 1 month old (see
+// renderTriageSigns / renderCaregiverSigns). Asked retrospectively at a
+// newborn's first check-up. Directly targets birth asphyxia, named in the
+// brief as a leading driver of Upper East's neonatal mortality — the
+// general IMCI sign set above was never built to catch this on its own.
+const NEWBORN_CRITICAL_SIGNS = [
+  { id: 'birth_no_cry', label: 'Did not cry or breathe right after birth' },
+  { id: 'birth_floppy', label: 'Was limp or floppy at birth' },
+  { id: 'birth_resuscitation', label: 'Needed help or stimulation to start breathing at birth' },
 ];
 const CHILD_MODERATE_SIGNS = [
   { id: 'fast_breathing', label: 'Breathing faster than normal for age' },
@@ -1439,12 +1474,14 @@ function assessChild({ ageMonths, selectedSignIds = [], vitals = {} }) {
   const reasons = [];
   const generalHit = CHILD_GENERAL_DANGER_SIGNS.filter((s) => selectedSignIds.includes(s.id));
   const criticalHit = CHILD_CRITICAL_SIGNS.filter((s) => selectedSignIds.includes(s.id));
+  const newbornHit = ageMonths < 1 ? NEWBORN_CRITICAL_SIGNS.filter((s) => selectedSignIds.includes(s.id)) : [];
   const moderateHit = [...CHILD_MODERATE_SIGNS.filter((s) => selectedSignIds.includes(s.id))];
   generalHit.forEach((s) => reasons.push(s.label));
   criticalHit.forEach((s) => reasons.push(s.label));
+  newbornHit.forEach((s) => reasons.push(s.label));
   moderateHit.forEach((s) => reasons.push(s.label));
   let level = 'routine';
-  if (generalHit.length > 0 || criticalHit.length > 0) level = 'urgent';
+  if (generalHit.length > 0 || criticalHit.length > 0 || newbornHit.length > 0) level = 'urgent';
   else if (moderateHit.length >= 2) level = 'urgent';
   else if (moderateHit.length === 1) level = 'caution';
   return { level, reasons, signCount: reasons.length };
@@ -1522,10 +1559,10 @@ const IMMUNIZATION_SCHEDULE = [
    --------------------------------------------------------------- */
 const DAY_MS = 86400000;
 const DEMO_HOUSEHOLDS = [
-  { headName:'Fati Mahama', community:'Zorborgu', distanceFromFacility:1.4, memberName:'Fati Mahama', memberType:'pregnant', gestationWeeks:32, currentRiskLevel:'routine', visitCount:3, lastVisitAt: Date.now() - 2*DAY_MS, immunizations:{}, lastCaregiverReport:null },
-  { headName:"Abdul-Rahim's household", community:'Zorborgu', distanceFromFacility:3.1, memberName:"Abdul-Rahim's child", memberType:'child', ageMonths:14, growthStatus:'mild_underweight', season:'dry', currentRiskLevel:'routine', visitCount:5, lastVisitAt: Date.now() - 11*DAY_MS,
+  { headName:'Fati Mahama', community:'Zorborgu', region:'Northern', distanceFromFacility:1.4, memberName:'Fati Mahama', memberType:'pregnant', gestationWeeks:32, currentRiskLevel:'routine', visitCount:3, lastVisitAt: Date.now() - 2*DAY_MS, immunizations:{}, lastCaregiverReport:null },
+  { headName:"Abdul-Rahim's household", community:'Zorborgu', region:'Northern', distanceFromFacility:3.1, memberName:"Abdul-Rahim's child", memberType:'child', ageMonths:14, growthStatus:'mild_underweight', season:'dry', currentRiskLevel:'routine', visitCount:5, lastVisitAt: Date.now() - 11*DAY_MS,
     immunizations:{ bcg_opv0:{given:true}, penta1_set:{given:true}, penta2_set:{given:true}, penta3_set:{given:true}, vitA1:{given:true}, mr1_yf_vitA:{given:false} }, lastCaregiverReport:null },
-  { headName:"Asana's household", community:'Zorborgu', distanceFromFacility:0.6, memberName:"Asana's child", memberType:'child', ageMonths:8, growthStatus:'normal', season:'rainy', currentRiskLevel:'routine', visitCount:2, lastVisitAt: Date.now(),
+  { headName:"Asana's household", community:'Zorborgu', region:'Northern', distanceFromFacility:0.6, memberName:"Asana's child", memberType:'child', ageMonths:8, growthStatus:'normal', season:'rainy', currentRiskLevel:'routine', visitCount:2, lastVisitAt: Date.now(),
     immunizations:{ bcg_opv0:{given:true}, penta1_set:{given:true}, penta2_set:{given:true}, penta3_set:{given:true} }, lastCaregiverReport:null },
 ];
 
@@ -1555,14 +1592,19 @@ if (USE_FIREBASE) {
   // This timeout + explicit rejection makes that failure visible instead.
   const authReady = new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject(new Error('Sign-in timed out. In Firebase Console, check Authentication \u2192 Sign-in method \u2192 Anonymous is enabled, and that you have a network connection.'));
+      const online = typeof navigator !== 'undefined' && 'onLine' in navigator ? navigator.onLine : true;
+      const origin = typeof location !== 'undefined' ? location.origin : 'this page';
+      reject(new Error(
+        (online ? '' : 'Your device appears to be offline. ') +
+        'Sign-in timed out \u2014 the request never reached Firebase, which usually means it was blocked before checking your Anonymous auth setting. Most likely causes: (1) "' + origin + '" is not in Firebase Console \u2192 Authentication \u2192 Settings \u2192 Authorized domains \u2014 add it there; (2) an ad blocker or privacy extension is blocking identitytoolkit.googleapis.com \u2014 try disabling it or an Incognito window; (3) you opened this file directly (file://) instead of from a real web address.'
+      ));
     }, 10000);
     onAuthStateChanged(auth, (user) => {
       if (user) { clearTimeout(timeoutId); resolve(user.uid); }
     });
     signInAnonymously(auth).catch((e) => {
       clearTimeout(timeoutId);
-      reject(new Error('Sign-in failed (' + (e && e.code ? e.code : 'unknown error') + '). Check that Anonymous authentication is enabled in Firebase Console.'));
+      reject(new Error('Sign-in failed (' + (e && e.code ? e.code : 'unknown error') + '). Check that Anonymous authentication is enabled in Firebase Console, and that this domain is in Authorized domains.'));
     });
   });
   authReady.catch(() => {}); // prevent an unhandled-rejection warning if nothing has awaited yet
@@ -2018,11 +2060,15 @@ function renderNutritionOfficerHome(households) {
     </div>`).join('');
 }
 
-function renderTriageSigns(memberType) {
+function renderTriageSigns(memberType, ageMonths) {
   const container = document.getElementById('triage-signs');
-  const signs = memberType === 'pregnant'
-    ? [...PREGNANCY_SIGNS.critical, ...PREGNANCY_SIGNS.moderate]
-    : [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS];
+  let signs;
+  if (memberType === 'pregnant') {
+    signs = [...PREGNANCY_SIGNS.critical, ...PREGNANCY_SIGNS.moderate];
+  } else {
+    signs = [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS];
+    if (ageMonths != null && ageMonths < 1) signs = [...signs, ...NEWBORN_CRITICAL_SIGNS];
+  }
   container.innerHTML = signs.map((s) =>
     `<span class="toggle-chip" onclick="toggleTriageSign('${s.id}', this)">${s.label}</span>`
   ).join('');
@@ -2039,7 +2085,7 @@ function openHousehold(id) {
   document.getElementById('triage-meta').textContent = h.memberType === 'pregnant'
     ? `${h.headName} · Pregnant, ${h.gestationWeeks} wks · Visit ${visitsSoFar}`
     : `${h.headName} · Child, ${h.ageMonths} mo · Visit ${visitsSoFar}`;
-  renderTriageSigns(h.memberType);
+  renderTriageSigns(h.memberType, h.ageMonths);
   document.getElementById('triage-result').innerHTML = '';
   renderImmunizationChecklist(h);
   setScreen('triage');
@@ -2152,13 +2198,17 @@ function saveNewHousehold() {
   }
   const community = document.getElementById('add-hh-community').value.trim() || 'Zorborgu';
   const distanceVal = parseFloat(document.getElementById('add-hh-distance').value);
-  let facilityName = null;
-  try { facilityName = localStorage.getItem('responda_facility_name'); } catch (e) {}
+  let facilityName = null, region = null;
+  try {
+    facilityName = localStorage.getItem('responda_facility_name');
+    region = localStorage.getItem('responda_region');
+  } catch (e) {}
   const base = {
     headName, memberName: headName, community,
     distanceFromFacility: isNaN(distanceVal) ? null : distanceVal,
     currentRiskLevel: 'routine', memberType: addHHType,
     facilityName: facilityName || 'Unassigned facility',
+    region: region || null,
   };
   if (addHHType === 'pregnant') {
     base.gestationWeeks = parseInt(document.getElementById('add-hh-gestation').value, 10) || null;
@@ -2416,6 +2466,48 @@ function getNextDueVaccine(h) {
   return { ...next, overdue: (h.ageMonths || 0) >= next.dueMonths };
 }
 
+function openCaregiverFeeding() {
+  renderCaregiverFeeding(currentCaregiverHousehold);
+  setScreen('cg-feeding');
+}
+
+function renderCaregiverFeeding(h) {
+  const titleEl = document.getElementById('cg-feeding-title');
+  const box = document.getElementById('cg-feeding-content');
+  if (!box) return;
+  if (!h) {
+    box.innerHTML = '<p class="muted" style="padding:0 20px;">Link your household first to see feeding guidance.</p>';
+    return;
+  }
+  if (h.memberType === 'pregnant') {
+    // Previously this screen always showed baby-food content, even to a
+    // pregnant caregiver — a real gap given Upper West's 44.2% maternal
+    // anaemia rate. This is the pregnancy-appropriate version.
+    if (titleEl) titleEl.textContent = 'Eating well in pregnancy';
+    box.innerHTML = `
+      <div class="speech-bubble" style="margin:14px 16px;"><span>Anaemia is common in pregnancy here — these foods help prevent it, alongside any iron tablets your health worker gives you.</span><button class="say-btn">🔊</button></div>
+      <div class="section-eyebrow">Iron-rich foods to eat often</div>
+      <div class="food-card"><div class="day">🥬</div><div class="desc">Dark leafy greens — ayoyo, kontomire, moringa</div></div>
+      <div class="food-card"><div class="day">🫘</div><div class="desc">Beans, groundnuts, and dawadawa</div></div>
+      <div class="food-card"><div class="day">🍖</div><div class="desc">Liver or other organ meat, when available</div></div>
+      <div class="food-card"><div class="day">🍊</div><div class="desc">Orange, or another vitamin C fruit, alongside meals — helps your body absorb iron</div></div>
+      <p class="mono" style="padding:12px 16px 90px; font-size:11px; color:var(--ink-muted);">Tip: tea or coffee right after a meal can reduce iron absorption — better to have them between meals.</p>`;
+    return;
+  }
+  if (titleEl) titleEl.textContent = 'Feeding your child well';
+  const plan = getNutritionPlan({ ageMonths: h.ageMonths, growthStatus: h.growthStatus, season: h.season || 'rainy' });
+  if (plan.needsReferral) {
+    box.innerHTML = `<div class="result-panel urgent" style="margin:16px;"><h3>Refer today</h3><p>${plan.message}</p></div>`;
+    return;
+  }
+  const statusLabel = h.growthStatus && h.growthStatus !== 'normal' ? h.growthStatus.replace('_', ' ') : null;
+  box.innerHTML = `
+    ${statusLabel ? `<span class="tag-status">${statusLabel} — catch-up plan</span>` : ''}
+    <div class="section-eyebrow">This week's local food plan</div>
+    ${(plan.weeklyPlan || []).map((d) => `<div class="food-card"><div class="day">${d.day.toUpperCase()}</div><div class="desc">${d.desc}</div></div>`).join('') || '<p class="muted" style="padding:0 16px;">No plan available for this age yet.</p>'}
+    <p class="mono" style="padding:12px 16px 90px; font-size:11px; color:var(--ink-muted);">${plan.tip || ''}</p>`;
+}
+
 function openCaregiverReminders() {
   renderCaregiverReminders(currentCaregiverHousehold);
   setScreen('cg-reminders');
@@ -2476,7 +2568,9 @@ function renderCaregiverSigns() {
   if (titleEl) titleEl.textContent = isPregnant ? 'How are you feeling today?' : 'How is your baby today?';
   const signs = isPregnant
     ? [...PREGNANCY_SIGNS.critical, ...PREGNANCY_SIGNS.moderate]
-    : [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS];
+    : (h.ageMonths != null && h.ageMonths < 1
+        ? [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...NEWBORN_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS]
+        : [...CHILD_GENERAL_DANGER_SIGNS, ...CHILD_CRITICAL_SIGNS, ...CHILD_MODERATE_SIGNS]);
   cgReportSigns = new Set();
   const container = document.getElementById('cg-signs');
   if (container) {
@@ -2567,6 +2661,7 @@ window.renderCaregiverSigns = renderCaregiverSigns;
 window.toggleCaregiverSign = toggleCaregiverSign;
 window.runCaregiverCheck = runCaregiverCheck;
 window.openCaregiverReminders = openCaregiverReminders;
+window.openCaregiverFeeding = openCaregiverFeeding;
 let householdDataBooted = false;
 async function bootHouseholdData(facilityName) {
   try {
@@ -2581,13 +2676,25 @@ async function bootHouseholdData(facilityName) {
 }
 
 window.onLoginComplete = function (role) {
-  let facilityName = null;
+  let facilityName = null, region = null, staffId = null;
   if (role === 'worker' || role === 'nutrition-officer') {
-    try { facilityName = localStorage.getItem('responda_facility_name'); } catch (e) {}
+    try {
+      facilityName = localStorage.getItem('responda_facility_name');
+      region = localStorage.getItem('responda_region');
+      staffId = localStorage.getItem('responda_staff_id');
+    } catch (e) {}
   }
   if (role === 'nutrition-officer') {
-    const label = document.getElementById('dno-facility-name');
-    if (label) label.textContent = facilityName || 'Unassigned facility';
+    const facilityLabel = document.getElementById('dno-facility-name');
+    const regionLabel = document.getElementById('dno-region');
+    if (facilityLabel) facilityLabel.textContent = facilityName || 'Unassigned facility';
+    if (regionLabel) regionLabel.textContent = region ? region + ' Region' : '\u2014';
+  }
+  if (role === 'worker') {
+    const staffLabel = document.getElementById('home-staff-id');
+    const detailLabel = document.getElementById('home-facility-region');
+    if (staffLabel) staffLabel.textContent = staffId || 'CHPS Worker';
+    if (detailLabel) detailLabel.textContent = [facilityName, region ? region + ' Region' : null].filter(Boolean).join(' · ') || '\u2014';
   }
   // Workers/officers see only their facility's households. Caregivers get
   // an unscoped subscription (facilityName = null) purely so the "find my
