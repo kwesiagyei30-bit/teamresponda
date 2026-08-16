@@ -640,6 +640,12 @@
             <div id="login-region-error" class="field-error">Please select your region.</div>
           </div>
 
+          <div id="login-phone-fields" style="width:100%;max-width:280px;margin-top:14px;">
+            <label class="field-label">Facility phone (optional)</label>
+            <input id="login-facility-phone" class="field-input" type="tel" placeholder="e.g. 0244000000" autocomplete="off" />
+            <div class="muted" style="font-size:11px; margin-top:5px;">Urgent referrals text this number automatically. Skip if not set up yet — referrals still save either way.</div>
+          </div>
+
           <div id="login-caregiver-note" style="display:none; max-width:260px; text-align:center; margin-top:24px;">
             <p class="muted">No password needed — next we'll link this device to your (or your child's) health record.</p>
           </div>
@@ -1291,6 +1297,7 @@
   const STAFF_ID_KEY = 'responda_staff_id';
   const FACILITY_KEY = 'responda_facility_name';
   const REGION_KEY = 'responda_region';
+  const PHONE_KEY = 'responda_facility_phone';
   const CG_LINK_KEY_LOCAL = 'responda_caregiver_household_id'; // mirrors the module script's CG_LINK_KEY
 
   function setRole(role, btn){
@@ -1302,11 +1309,13 @@
     const staffFields = document.getElementById('login-staff-fields');
     const facilityFields = document.getElementById('login-facility-fields');
     const regionFields = document.getElementById('login-region-fields');
+    const phoneFields = document.getElementById('login-phone-fields');
     const cgNote = document.getElementById('login-caregiver-note');
     if (nameFields) nameFields.style.display = isStaff ? '' : 'none';
     if (staffFields) staffFields.style.display = isStaff ? '' : 'none';
     if (facilityFields) facilityFields.style.display = isStaff ? '' : 'none';
     if (regionFields) regionFields.style.display = isStaff ? '' : 'none';
+    if (phoneFields) phoneFields.style.display = isStaff ? '' : 'none';
     if (cgNote) cgNote.style.display = isStaff ? 'none' : '';
     hideLoginError();
     updateContinueButtonLabel();
@@ -1325,21 +1334,24 @@
   }
 
   function prefillStaffId(){
-    let savedName = null, savedId = null, savedFacility = null, savedRegion = null;
+    let savedName = null, savedId = null, savedFacility = null, savedRegion = null, savedPhone = null;
     try {
       savedName = localStorage.getItem(STAFF_NAME_KEY);
       savedId = localStorage.getItem(STAFF_ID_KEY);
       savedFacility = localStorage.getItem(FACILITY_KEY);
       savedRegion = localStorage.getItem(REGION_KEY);
+      savedPhone = localStorage.getItem(PHONE_KEY);
     } catch(e){}
     const nameInput = document.getElementById('login-name');
     const idInput = document.getElementById('login-staff-id');
     const facilityInput = document.getElementById('login-facility');
     const regionInput = document.getElementById('login-region');
+    const phoneInput = document.getElementById('login-facility-phone');
     if (savedName && nameInput && !nameInput.value) nameInput.value = savedName;
     if (savedId && idInput && !idInput.value) idInput.value = savedId;
     if (savedFacility && facilityInput && !facilityInput.value) facilityInput.value = savedFacility;
     if (savedRegion && regionInput && !regionInput.value) regionInput.value = savedRegion;
+    if (savedPhone && phoneInput && !phoneInput.value) phoneInput.value = savedPhone;
     updateContinueButtonLabel();
   }
 
@@ -1366,10 +1378,12 @@
       const facilityError = document.getElementById('login-facility-error');
       const regionInput = document.getElementById('login-region');
       const regionError = document.getElementById('login-region-error');
+      const phoneInput = document.getElementById('login-facility-phone');
       const nameVal = nameInput.value.trim();
       const idVal = idInput.value.trim();
       const facilityVal = facilityInput.value.trim();
       const regionVal = regionInput.value;
+      const phoneVal = phoneInput.value.trim(); // optional — no validation
       let valid = true;
       if (!nameVal) { nameInput.classList.add('error'); nameError.classList.add('show'); valid = false; }
       else { nameInput.classList.remove('error'); nameError.classList.remove('show'); }
@@ -1385,6 +1399,8 @@
         localStorage.setItem(STAFF_ID_KEY, idVal);
         localStorage.setItem(FACILITY_KEY, facilityVal);
         localStorage.setItem(REGION_KEY, regionVal);
+        if (phoneVal) localStorage.setItem(PHONE_KEY, phoneVal);
+        else localStorage.removeItem(PHONE_KEY);
       } catch(e){}
     }
     currentSessionRole = loginRole; // must be set before navigating, since setScreen enforces it
@@ -1416,6 +1432,7 @@
       localStorage.removeItem(STAFF_ID_KEY);
       localStorage.removeItem(FACILITY_KEY);
       localStorage.removeItem(REGION_KEY);
+      localStorage.removeItem(PHONE_KEY);
       localStorage.removeItem(CG_LINK_KEY_LOCAL);
     } catch(e){}
     if (window.resetAppState) window.resetAppState();
@@ -1423,7 +1440,7 @@
     setScreen('login');
     const workerBtn = document.querySelector('.role-btn[data-role="worker"]');
     if (workerBtn) setRole('worker', workerBtn);
-    ['login-name','login-staff-id','login-facility'].forEach((id) => {
+    ['login-name','login-staff-id','login-facility','login-facility-phone'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -2266,10 +2283,11 @@ function saveNewHousehold() {
   }
   const community = document.getElementById('add-hh-community').value.trim() || 'Zorborgu';
   const distanceVal = parseFloat(document.getElementById('add-hh-distance').value);
-  let facilityName = null, region = null;
+  let facilityName = null, region = null, facilityPhone = null;
   try {
     facilityName = localStorage.getItem('responda_facility_name');
     region = localStorage.getItem('responda_region');
+    facilityPhone = localStorage.getItem('responda_facility_phone');
   } catch (e) {}
   const base = {
     headName, memberName: headName, community,
@@ -2277,6 +2295,7 @@ function saveNewHousehold() {
     currentRiskLevel: 'routine', memberType: addHHType,
     facilityName: facilityName || 'Unassigned facility',
     region: region || null,
+    facilityPhone: facilityPhone || null,
   };
   if (addHHType === 'pregnant') {
     base.gestationWeeks = parseInt(document.getElementById('add-hh-gestation').value, 10) || null;
@@ -2400,7 +2419,8 @@ function generateReferral() {
     return Data.createReferral({
       assessmentId, householdId: h.id, urgency: result.level,
       reasonSummary: result.reasons.join('; '), distanceKm: h.distanceFromFacility,
-      facilityName: h.facilityName || null,
+      facilityName: h.facilityName || null, facilityPhone: h.facilityPhone || null,
+      patientLabel: h.memberName || h.headName || null,
     }).then((referralId) => {
       Data.subscribeReferral(referralId, renderReferralStatus);
       renderReferralSummary(h, result);
