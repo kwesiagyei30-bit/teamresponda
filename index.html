@@ -609,7 +609,13 @@
             <button class="role-btn" data-role="nutrition-officer" onclick="setRole('nutrition-officer',this)">Nutrition Officer</button>
           </div>
 
-          <div id="login-staff-fields" style="width:100%;max-width:280px;margin-top:24px;">
+          <div id="login-name-fields" style="width:100%;max-width:280px;margin-top:24px;">
+            <label class="field-label">Full name</label>
+            <input id="login-name" class="field-input" type="text" placeholder="e.g. Ayishetu Mahama" autocomplete="off" oninput="updateContinueButtonLabel()" />
+            <div id="login-name-error" class="field-error">Please enter your name.</div>
+          </div>
+
+          <div id="login-staff-fields" style="width:100%;max-width:280px;margin-top:14px;">
             <label class="field-label">Staff ID</label>
             <input id="login-staff-id" class="field-input" type="text" placeholder="e.g. GHS-CW-0417" autocomplete="off" oninput="updateContinueButtonLabel()" />
             <div id="login-staff-id-error" class="field-error">Please enter your Staff ID.</div>
@@ -654,8 +660,9 @@
           <div class="sync"><span class="pulse sm routine"><span class="pulse-core"></span></span> SYNCED · 0.2s ago</div>
         </div>
 
-        <div style="padding:12px 20px 0; display:flex; justify-content:flex-end;">
+        <div style="padding:12px 20px 0; display:flex; justify-content:flex-end; gap:14px;">
           <span class="mode-link" onclick="goToCaregiverLogin()">👩‍👧 Caregiver view</span>
+          <span class="mode-link" onclick="logoutUser()">↩ Log out</span>
         </div>
 
         <div style="padding:14px 20px 4px;">
@@ -879,7 +886,7 @@
       <!-- =================== CAREGIVER: LINK HOUSEHOLD =================== -->
       <div class="screen mobile-only m-screen" id="cg-link" data-screen="cg-link" style="display:none;">
         <div class="top-bar">
-          <span class="mode-link" onclick="setScreen('home')">← Health worker view</span>
+          <span class="mode-link" onclick="logoutUser()">↩ Log out</span>
         </div>
         <div style="padding:20px 20px 4px;">
           <div style="font-weight:700;font-size:17px;">Whose record is this?</div>
@@ -914,7 +921,7 @@
             <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.9-10-9.3C.3 8.2 2 4.5 5.6 4c2-.3 3.7.6 4.9 2.3.9-1.7 2.9-2.6 4.9-2.3C19 4.5 20.7 8.2 19 11.7 17 16 12 21 12 21z" fill="#fff"/></svg></div>
             <span>Responda</span>
           </div>
-          <span class="mode-link" onclick="setScreen('login')">↩ Log out</span>
+          <span class="mode-link" onclick="logoutUser()">↩ Log out</span>
         </div>
 
         <div style="padding:14px 20px 4px;">
@@ -942,7 +949,7 @@
       <!-- =================== CAREGIVER: HOME =================== -->
       <div class="screen mobile-only m-screen" id="cg-home" data-screen="cg-home" style="display:none;">
         <div class="top-bar">
-          <span class="mode-link" onclick="setScreen('home')">← Health worker view</span>
+          <span class="mode-link" onclick="logoutUser()">↩ Log out</span>
           <span class="lang-chip" title="More languages coming soon">EN ▾</span>
         </div>
 
@@ -979,6 +986,9 @@
         <div class="reminder-banner" id="cg-next-vaccine-banner" style="display:none;">
           <span class="txt" id="cg-next-vaccine-text">💉 Next vaccine due</span>
         </div>
+
+        <div class="section-eyebrow">My details on file</div>
+        <div id="cg-my-details" style="padding:0 16px 4px;"><!-- populated by renderCaregiverHome() --></div>
 
         <div class="bottom-nav">
           <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
@@ -1164,7 +1174,23 @@
 
 <script>
   // ---- Mobile screen navigation ----
+  // ---- Role-based access: each logged-in role can only reach its own screens ----
+  const ROLE_SCREENS = {
+    worker: ['home', 'triage', 'referral', 'nutrition', 'register', 'add-household'],
+    caregiver: ['cg-home', 'cg-checkup', 'cg-feeding', 'cg-reminders', 'cg-link'],
+    'nutrition-officer': ['dno-home', 'nutrition'],
+  };
+  const PUBLIC_SCREENS = ['splash', 'onboarding', 'login'];
+  let currentSessionRole = null;
+
   function setScreen(name){
+    if (currentSessionRole && !PUBLIC_SCREENS.includes(name)) {
+      const allowed = ROLE_SCREENS[currentSessionRole] || [];
+      if (!allowed.includes(name)) {
+        console.warn('[Responda] Blocked navigation to "' + name + '" — not permitted for role "' + currentSessionRole + '"');
+        name = allowed[0] || 'login';
+      }
+    }
     document.querySelectorAll('.m-screen').forEach(el=>{
       el.style.display = (el.dataset.screen === name) ? '' : 'none';
     });
@@ -1261,19 +1287,23 @@
   // household-linking step that follows already answers "who is this."
   var nutritionReturnScreen = 'home';
   let loginRole = 'worker';
+  const STAFF_NAME_KEY = 'responda_staff_name';
   const STAFF_ID_KEY = 'responda_staff_id';
   const FACILITY_KEY = 'responda_facility_name';
   const REGION_KEY = 'responda_region';
+  const CG_LINK_KEY_LOCAL = 'responda_caregiver_household_id'; // mirrors the module script's CG_LINK_KEY
 
   function setRole(role, btn){
     loginRole = role;
     document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const isStaff = role === 'worker' || role === 'nutrition-officer';
+    const nameFields = document.getElementById('login-name-fields');
     const staffFields = document.getElementById('login-staff-fields');
     const facilityFields = document.getElementById('login-facility-fields');
     const regionFields = document.getElementById('login-region-fields');
     const cgNote = document.getElementById('login-caregiver-note');
+    if (nameFields) nameFields.style.display = isStaff ? '' : 'none';
     if (staffFields) staffFields.style.display = isStaff ? '' : 'none';
     if (facilityFields) facilityFields.style.display = isStaff ? '' : 'none';
     if (regionFields) regionFields.style.display = isStaff ? '' : 'none';
@@ -1285,25 +1315,28 @@
   function updateContinueButtonLabel(){
     const btn = document.getElementById('login-continue-btn');
     if (!btn) return;
-    const idInput = document.getElementById('login-staff-id');
+    const nameInput = document.getElementById('login-name');
     const isStaff = loginRole === 'worker' || loginRole === 'nutrition-officer';
-    if (isStaff && idInput && idInput.value.trim()) {
-      btn.textContent = 'Continue as ' + idInput.value.trim();
+    if (isStaff && nameInput && nameInput.value.trim()) {
+      btn.textContent = 'Continue as ' + nameInput.value.trim();
     } else {
       btn.textContent = 'Continue';
     }
   }
 
   function prefillStaffId(){
-    let savedId = null, savedFacility = null, savedRegion = null;
+    let savedName = null, savedId = null, savedFacility = null, savedRegion = null;
     try {
+      savedName = localStorage.getItem(STAFF_NAME_KEY);
       savedId = localStorage.getItem(STAFF_ID_KEY);
       savedFacility = localStorage.getItem(FACILITY_KEY);
       savedRegion = localStorage.getItem(REGION_KEY);
     } catch(e){}
+    const nameInput = document.getElementById('login-name');
     const idInput = document.getElementById('login-staff-id');
     const facilityInput = document.getElementById('login-facility');
     const regionInput = document.getElementById('login-region');
+    if (savedName && nameInput && !nameInput.value) nameInput.value = savedName;
     if (savedId && idInput && !idInput.value) idInput.value = savedId;
     if (savedFacility && facilityInput && !facilityInput.value) facilityInput.value = savedFacility;
     if (savedRegion && regionInput && !regionInput.value) regionInput.value = savedRegion;
@@ -1325,16 +1358,21 @@
     hideLoginError();
     const isStaff = loginRole === 'worker' || loginRole === 'nutrition-officer';
     if (isStaff) {
+      const nameInput = document.getElementById('login-name');
+      const nameError = document.getElementById('login-name-error');
       const idInput = document.getElementById('login-staff-id');
       const idError = document.getElementById('login-staff-id-error');
       const facilityInput = document.getElementById('login-facility');
       const facilityError = document.getElementById('login-facility-error');
       const regionInput = document.getElementById('login-region');
       const regionError = document.getElementById('login-region-error');
+      const nameVal = nameInput.value.trim();
       const idVal = idInput.value.trim();
       const facilityVal = facilityInput.value.trim();
       const regionVal = regionInput.value;
       let valid = true;
+      if (!nameVal) { nameInput.classList.add('error'); nameError.classList.add('show'); valid = false; }
+      else { nameInput.classList.remove('error'); nameError.classList.remove('show'); }
       if (!idVal) { idInput.classList.add('error'); idError.classList.add('show'); valid = false; }
       else { idInput.classList.remove('error'); idError.classList.remove('show'); }
       if (!facilityVal) { facilityInput.classList.add('error'); facilityError.classList.add('show'); valid = false; }
@@ -1343,11 +1381,13 @@
       else { regionInput.classList.remove('error'); regionError.classList.remove('show'); }
       if (!valid) return;
       try {
+        localStorage.setItem(STAFF_NAME_KEY, nameVal);
         localStorage.setItem(STAFF_ID_KEY, idVal);
         localStorage.setItem(FACILITY_KEY, facilityVal);
         localStorage.setItem(REGION_KEY, regionVal);
       } catch(e){}
     }
+    currentSessionRole = loginRole; // must be set before navigating, since setScreen enforces it
     const dest = loginRole === 'worker' ? 'home' : loginRole === 'nutrition-officer' ? 'dno-home' : 'cg-home';
     setScreen(dest);
     if (window.onLoginComplete) window.onLoginComplete(loginRole);
@@ -1358,9 +1398,37 @@
   // straight into caregiver screens with no linked record (that silent
   // bypass was the actual cause of check-up/reminders "not working").
   function goToCaregiverLogin(){
+    currentSessionRole = null;
+    if (window.resetAppState) window.resetAppState();
     setScreen('login');
     const cgBtn = document.querySelector('.role-btn[data-role="caregiver"]');
     if (cgBtn) setRole('caregiver', cgBtn);
+  }
+
+  // Every role gets a real logout: clears remembered identity (so a shared
+  // device never silently continues as the last person who used it),
+  // resets in-memory app state (module-scope data, so nothing stale flashes
+  // on the next login), and returns to a genuinely blank login screen.
+  function logoutUser(){
+    currentSessionRole = null;
+    try {
+      localStorage.removeItem(STAFF_NAME_KEY);
+      localStorage.removeItem(STAFF_ID_KEY);
+      localStorage.removeItem(FACILITY_KEY);
+      localStorage.removeItem(REGION_KEY);
+      localStorage.removeItem(CG_LINK_KEY_LOCAL);
+    } catch(e){}
+    if (window.resetAppState) window.resetAppState();
+    loginRole = 'worker';
+    setScreen('login');
+    const workerBtn = document.querySelector('.role-btn[data-role="worker"]');
+    if (workerBtn) setRole('worker', workerBtn);
+    ['login-name','login-staff-id','login-facility'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const regionEl = document.getElementById('login-region');
+    if (regionEl) regionEl.value = '';
   }
 </script>
 
@@ -2452,6 +2520,22 @@ function renderCaregiverHome(h) {
   } else if (banner) {
     banner.style.display = 'none';
   }
+
+  const detailsBox = document.getElementById('cg-my-details');
+  if (detailsBox) {
+    const specifics = isPregnant
+      ? `Pregnant \u00b7 ${h.gestationWeeks ?? '\u2014'} weeks`
+      : `Child \u00b7 ${h.ageMonths ?? '\u2014'} months${h.growthStatus && h.growthStatus !== 'normal' ? ' \u00b7 ' + growthLabel(h.growthStatus) : ''}`;
+    detailsBox.innerHTML = `
+      <div class="card" style="cursor:default;">
+        <span class="pulse ${isPregnant ? 'routine' : growthPulseClass(h.growthStatus)}"><span class="pulse-core">${initials(h.headName)}</span></span>
+        <div class="info">
+          <div class="name">${h.memberName || h.headName}</div>
+          <div class="meta">${specifics}</div>
+          <div class="meta mono" style="margin-top:2px;">${h.community || ''}${h.distanceFromFacility != null ? ' \u00b7 ' + h.distanceFromFacility + 'km from facility' : ''}</div>
+        </div>
+      </div>`;
+  }
 }
 
 // Returns the next not-yet-given vaccine due for a child, or null if
@@ -2675,26 +2759,69 @@ async function bootHouseholdData(facilityName) {
   }
 }
 
+// Called on every logout so the next login starts genuinely clean — no
+// stale household list, no previous user's name flashing before new data
+// loads, no leftover in-progress triage/report state carried across users.
+function resetAppState() {
+  allHouseholds = [];
+  currentHousehold = null;
+  currentTriageResult = null;
+  triageSelectedSigns = new Set();
+  currentCaregiverHousehold = null;
+  cgReportSigns = new Set();
+  householdDataBooted = false;
+
+  const clearIds = [
+    'household-list', 'household-count', 'caregiver-reports-list',
+    'dno-child-list', 'dno-flagged-list', 'dno-stats', 'dno-trends',
+    'triage-signs', 'triage-result', 'nutrition-content',
+    'referral-summary', 'referral-stepper', 'cg-signs', 'cg-result',
+    'cg-feeding-content', 'cg-reminders-content',
+  ];
+  clearIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  const caregiverReportsSection = document.getElementById('caregiver-reports-section');
+  if (caregiverReportsSection) caregiverReportsSection.style.display = 'none';
+  const dnoFlaggedSection = document.getElementById('dno-flagged-section');
+  if (dnoFlaggedSection) dnoFlaggedSection.style.display = 'none';
+  const homeStaffId = document.getElementById('home-staff-id');
+  if (homeStaffId) homeStaffId.textContent = 'CHPS Worker';
+  const homeFacilityRegion = document.getElementById('home-facility-region');
+  if (homeFacilityRegion) homeFacilityRegion.textContent = '\u2014';
+  const dnoFacilityName = document.getElementById('dno-facility-name');
+  if (dnoFacilityName) dnoFacilityName.textContent = 'Loading facility\u2026';
+  const dnoRegion = document.getElementById('dno-region');
+  if (dnoRegion) dnoRegion.textContent = '\u2014';
+  const cgGreeting = document.getElementById('cg-greeting');
+  if (cgGreeting) cgGreeting.textContent = 'Welcome! I\u2019m Abena \u2014 here to help.';
+  const existingToast = document.querySelector('.app-error-toast');
+  if (existingToast) existingToast.remove();
+}
+window.resetAppState = resetAppState;
+
 window.onLoginComplete = function (role) {
-  let facilityName = null, region = null, staffId = null;
+  let facilityName = null, region = null, staffId = null, staffName = null;
   if (role === 'worker' || role === 'nutrition-officer') {
     try {
       facilityName = localStorage.getItem('responda_facility_name');
       region = localStorage.getItem('responda_region');
       staffId = localStorage.getItem('responda_staff_id');
+      staffName = localStorage.getItem('responda_staff_name');
     } catch (e) {}
   }
   if (role === 'nutrition-officer') {
     const facilityLabel = document.getElementById('dno-facility-name');
     const regionLabel = document.getElementById('dno-region');
-    if (facilityLabel) facilityLabel.textContent = facilityName || 'Unassigned facility';
+    if (facilityLabel) facilityLabel.textContent = staffName ? staffName + ' \u2014 ' + (facilityName || 'Unassigned facility') : (facilityName || 'Unassigned facility');
     if (regionLabel) regionLabel.textContent = region ? region + ' Region' : '\u2014';
   }
   if (role === 'worker') {
     const staffLabel = document.getElementById('home-staff-id');
     const detailLabel = document.getElementById('home-facility-region');
-    if (staffLabel) staffLabel.textContent = staffId || 'CHPS Worker';
-    if (detailLabel) detailLabel.textContent = [facilityName, region ? region + ' Region' : null].filter(Boolean).join(' · ') || '\u2014';
+    if (staffLabel) staffLabel.textContent = staffName || 'CHPS Worker';
+    if (detailLabel) detailLabel.textContent = [facilityName, region ? region + ' Region' : null, staffId].filter(Boolean).join(' · ') || '\u2014';
   }
   // Workers/officers see only their facility's households. Caregivers get
   // an unscoped subscription (facilityName = null) purely so the "find my
