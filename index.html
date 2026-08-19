@@ -176,7 +176,10 @@
     container-name: app;
   }
 
-  .screen{ height:100%; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; }
+  .screen{
+    height:100%; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  }
 
   /* ---------- Pulse ring — signature element ---------- */
   .pulse{
@@ -817,11 +820,11 @@
         <div class="section-eyebrow">Danger signs · tap all that apply</div>
         <div style="padding:0 16px;" id="triage-signs"><!-- populated by renderTriageSigns() --></div>
 
-        <div style="padding:12px 16px 0;">
+        <div style="padding:12px 16px 24px;">
           <button class="btn-ghost" style="width:100%;" onclick="runTriageAssessment()">Check risk</button>
         </div>
 
-        <div id="triage-result"><!-- populated by runTriageAssessment() --></div>
+        <div id="triage-result" style="min-height:1px;"><!-- populated by runTriageAssessment() --></div>
 
         <div id="triage-immunizations" style="display:none;">
           <div class="section-eyebrow">Immunizations · this visit</div>
@@ -855,9 +858,10 @@
         </div>
         <p class="mono" id="referral-fallback-note" style="padding:0 16px; font-size:11px; color:var(--ink-muted);"></p>
 
-        <div style="padding:16px 16px 90px;">
-          <button class="btn-ghost" style="width:100%;">View facility contact</button>
+        <div style="padding:16px 16px 8px;">
+          <button class="btn-ghost" style="width:100%;" onclick="toggleFacilityContactPanel()">📞 View facility contact</button>
         </div>
+        <div id="referral-facility-panel" style="display:none; padding:0 16px 90px;"><!-- populated by renderFacilityContactPanel() --></div>
 
         <div class="bottom-nav">
           <div class="nav-item" onclick="setScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home</div>
@@ -1651,6 +1655,14 @@ const DEMO_HOUSEHOLDS = [
     immunizations:{ bcg_opv0:{given:true}, penta1_set:{given:true}, penta2_set:{given:true}, penta3_set:{given:true} }, lastCaregiverReport:null },
 ];
 
+// Demo-only facility directory — clearly placeholder numbers, never
+// auto-dialed. Real facilities populate this collection organically as
+// staff log in with their own facility name/phone (see registerFacility).
+const DEMO_FACILITIES = [
+  { name: 'Walewale District Hospital', phone: '0392022123', region: 'Northern' },
+  { name: 'Nyoglo Health Post', phone: '0392022456', region: 'Northern' },
+];
+
 /* ---------------------------------------------------------------
    DATA LAYER — Firebase if configured, otherwise local in-memory
    --------------------------------------------------------------- */
@@ -1722,6 +1734,34 @@ if (USE_FIREBASE) {
           q,
           (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
           (err) => showAppError('Could not load households: ' + err.message)
+        );
+      }).catch((err) => showAppError(err.message));
+    },
+    // Facility directory: builds organically as staff log in with a
+    // facility name/phone — upserts by name so re-logging-in the same
+    // facility just refreshes its phone rather than duplicating it.
+    async registerFacility(facility) {
+      if (!facility || !facility.name) return;
+      await authReady;
+      const q = query(collection(db, 'facilities'), where('name', '==', facility.name));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        await updateDoc(snap.docs[0].ref, {
+          phone: facility.phone || null, region: facility.region || null, updatedAt: serverTimestamp(),
+        });
+      } else {
+        await addDoc(collection(db, 'facilities'), { ...facility, createdAt: serverTimestamp() });
+      }
+    },
+    subscribeFacilities(region, cb) {
+      authReady.then(() => {
+        const q = region
+          ? query(collection(db, 'facilities'), where('region', '==', region))
+          : collection(db, 'facilities');
+        onSnapshot(
+          q,
+          (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+          (err) => showAppError('Could not load nearby facilities: ' + err.message)
         );
       }).catch((err) => showAppError(err.message));
     },
@@ -1797,10 +1837,13 @@ if (USE_FIREBASE) {
 }
 
 function buildLocalDataLayer() {
-  const store = { households: [], referrals: {} };
+  const store = { households: [], referrals: {}, facilities: [] };
   const householdListeners = [];
+  const facilityListeners = [];
   let seeded = false;
+  let facilitiesSeeded = false;
   function notifyHouseholds() { householdListeners.forEach((cb) => cb(store.households.map((h) => ({ ...h }))) ); }
+  function notifyFacilities() { facilityListeners.forEach((cb) => cb()); }
   return {
     mode: 'local',
     async seedIfEmpty(facilityName) {
@@ -1808,6 +1851,11 @@ function buildLocalDataLayer() {
       seeded = true;
       store.households = DEMO_HOUSEHOLDS.map((h, i) => ({ id: 'demo-' + i, ...h, facilityName }));
       notifyHouseholds();
+      if (!facilitiesSeeded) {
+        facilitiesSeeded = true;
+        store.facilities = DEMO_FACILITIES.map((f, i) => ({ id: 'demo-fac-' + i, ...f }));
+        notifyFacilities();
+      }
     },
     subscribeHouseholds(facilityName, cb) {
       const push = () => {
@@ -1817,6 +1865,25 @@ function buildLocalDataLayer() {
         cb(filtered.map((h) => ({ ...h })));
       };
       householdListeners.push(push);
+      push();
+    },
+    async registerFacility(facility) {
+      if (!facility || !facility.name) return;
+      const existing = store.facilities.find((f) => f.name === facility.name);
+      if (existing) {
+        existing.phone = facility.phone || existing.phone;
+        existing.region = facility.region || existing.region;
+      } else {
+        store.facilities.push({ id: 'local-fac-' + Date.now(), ...facility });
+      }
+      notifyFacilities();
+    },
+    subscribeFacilities(region, cb) {
+      const push = () => {
+        const filtered = region ? store.facilities.filter((f) => f.region === region) : store.facilities;
+        cb(filtered.map((f) => ({ ...f })));
+      };
+      facilityListeners.push(push);
       push();
     },
     async saveRiskAssessment(data) {
@@ -1889,6 +1956,7 @@ function buildLocalDataLayer() {
    APP WIRING
    --------------------------------------------------------------- */
 let allHouseholds = [];
+let allFacilities = [];
 let currentHousehold = null;
 let currentTriageResult = null;
 let triageSelectedSigns = new Set();
@@ -2405,6 +2473,50 @@ function renderReferralStatus(referral) {
   if (note) note.textContent = synced ? '' : 'No signal yet — SMS fallback armed, will send automatically once in range.';
 }
 
+// The facility contact panel — was previously a dead button with no
+// handler at all. Shows the referral's own facility phone (tap-to-call,
+// since these are real numbers) plus other facilities in the same region,
+// for continuity of care if the primary facility can't take the case.
+let facilityPanelOpen = false;
+function toggleFacilityContactPanel() {
+  facilityPanelOpen = !facilityPanelOpen;
+  const panel = document.getElementById('referral-facility-panel');
+  if (!panel) return;
+  if (facilityPanelOpen) {
+    renderFacilityContactPanel();
+    panel.style.display = '';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function facilityContactCard(name, phone) {
+  return `
+    <div class="card" style="cursor:default; flex-direction:column; align-items:stretch; margin-bottom:8px;">
+      <div class="name">${name}</div>
+      ${phone
+        ? `<a href="tel:${phone}" class="meta mono" style="color:var(--emerald); text-decoration:none; font-weight:600;">📞 ${phone} — tap to call</a>`
+        : `<div class="meta mono" style="color:var(--ink-muted);">No phone number on file yet</div>`}
+    </div>`;
+}
+
+function renderFacilityContactPanel() {
+  const panel = document.getElementById('referral-facility-panel');
+  if (!panel) return;
+  const h = currentHousehold;
+  if (!h) {
+    panel.innerHTML = '<p class="muted">Open a household\u2019s referral first to see facility contact details.</p>';
+    return;
+  }
+  let html = facilityContactCard(h.facilityName || 'Facility not set', h.facilityPhone);
+  const others = allFacilities.filter((f) => f.name !== h.facilityName).slice(0, 3);
+  if (others.length) {
+    html += `<div class="section-eyebrow" style="padding:14px 0 6px;">Other nearby facilities</div>`;
+    html += others.map((f) => facilityContactCard(f.name, f.phone)).join('');
+  }
+  panel.innerHTML = html;
+}
+
 function generateReferral() {
   if (!currentHousehold || !currentTriageResult) return;
   const h = currentHousehold;
@@ -2754,6 +2866,8 @@ window.toggleTriageSign = toggleTriageSign;
 window.runTriageAssessment = runTriageAssessment;
 window.generateReferral = generateReferral;
 window.openNutritionAuto = openNutritionAuto;
+window.toggleFacilityContactPanel = toggleFacilityContactPanel;
+window.getAllFacilities = () => allFacilities;
 window.openNutritionFromDNO = openNutritionFromDNO;
 window.assessChildDemo = assessChild;
 window.toggleImmunization = toggleImmunization;
@@ -2784,24 +2898,28 @@ async function bootHouseholdData(facilityName) {
 // loads, no leftover in-progress triage/report state carried across users.
 function resetAppState() {
   allHouseholds = [];
+  allFacilities = [];
   currentHousehold = null;
   currentTriageResult = null;
   triageSelectedSigns = new Set();
   currentCaregiverHousehold = null;
   cgReportSigns = new Set();
   householdDataBooted = false;
+  facilityPanelOpen = false;
 
   const clearIds = [
     'household-list', 'household-count', 'caregiver-reports-list',
     'dno-child-list', 'dno-flagged-list', 'dno-stats', 'dno-trends',
     'triage-signs', 'triage-result', 'nutrition-content',
-    'referral-summary', 'referral-stepper', 'cg-signs', 'cg-result',
+    'referral-summary', 'referral-stepper', 'referral-facility-panel', 'cg-signs', 'cg-result',
     'cg-feeding-content', 'cg-reminders-content',
   ];
   clearIds.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '';
   });
+  const referralFacilityPanel = document.getElementById('referral-facility-panel');
+  if (referralFacilityPanel) referralFacilityPanel.style.display = 'none';
   const caregiverReportsSection = document.getElementById('caregiver-reports-section');
   if (caregiverReportsSection) caregiverReportsSection.style.display = 'none';
   const dnoFlaggedSection = document.getElementById('dno-flagged-section');
@@ -2822,13 +2940,14 @@ function resetAppState() {
 window.resetAppState = resetAppState;
 
 window.onLoginComplete = function (role) {
-  let facilityName = null, region = null, staffId = null, staffName = null;
+  let facilityName = null, region = null, staffId = null, staffName = null, facilityPhone = null;
   if (role === 'worker' || role === 'nutrition-officer') {
     try {
       facilityName = localStorage.getItem('responda_facility_name');
       region = localStorage.getItem('responda_region');
       staffId = localStorage.getItem('responda_staff_id');
       staffName = localStorage.getItem('responda_staff_name');
+      facilityPhone = localStorage.getItem('responda_facility_phone');
     } catch (e) {}
   }
   if (role === 'nutrition-officer') {
@@ -2843,6 +2962,15 @@ window.onLoginComplete = function (role) {
     if (staffLabel) staffLabel.textContent = staffName || 'CHPS Worker';
     if (detailLabel) detailLabel.textContent = [facilityName, region ? region + ' Region' : null, staffId].filter(Boolean).join(' · ') || '\u2014';
   }
+  // Build the facility directory organically: whoever logs in with a
+  // facility name registers/refreshes it, and everyone on that region
+  // gets the live list for "other nearby facilities" suggestions.
+  if (facilityName) {
+    Data.registerFacility({ name: facilityName, phone: facilityPhone || null, region: region || null }).catch((err) => {
+      console.warn('[Responda] Could not register facility:', err);
+    });
+  }
+  Data.subscribeFacilities(region || null, (facilities) => { allFacilities = facilities; });
   // Workers/officers see only their facility's households. Caregivers get
   // an unscoped subscription (facilityName = null) purely so the "find my
   // household" search on the linking screen has something to search —
